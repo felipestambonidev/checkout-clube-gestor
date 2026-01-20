@@ -149,7 +149,7 @@ export default function CheckoutPage() {
                       Workshop de Aceleração de Resultados | Jornada de Compra do Cliente
                     </h2>
                     <p className="text-slate-600 text-sm mb-3">
-                      Curso completo de visitação e apreciação artística no Instituto Inhotim
+                      Curso completo com carga horária de 3 horas, ministrado por especialistas do Clube Gestor.
                     </p>
                     <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
                       1 Entrada Inteira
