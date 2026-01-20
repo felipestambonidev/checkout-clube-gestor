@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, ScanCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME, PARTITION_KEY } from "@/lib/dynamodb";
 
 // Criar novo cupom
@@ -68,6 +68,40 @@ export async function GET() {
     console.error("[v0] Error listing coupons:", error);
     return NextResponse.json(
       { error: "Erro ao listar cupons" },
+      { status: 500 }
+    );
+  }
+}
+
+// Excluir cupom
+export async function DELETE(request: Request) {
+  try {
+    const { code } = await request.json();
+
+    if (!code) {
+      return NextResponse.json(
+        { error: "Código do cupom é obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    const deleteCommand = new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        [PARTITION_KEY]: `COUPON#${code.toUpperCase()}`,
+      },
+    });
+
+    await docClient.send(deleteCommand);
+
+    return NextResponse.json({
+      success: true,
+      message: "Cupom excluído com sucesso",
+    });
+  } catch (error) {
+    console.error("[v0] Error deleting coupon:", error);
+    return NextResponse.json(
+      { error: "Erro ao excluir cupom" },
       { status: 500 }
     );
   }
