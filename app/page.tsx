@@ -22,11 +22,12 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const coursePrice = 474.9;
+  const coursePrice = 474.90;
   const finalPrice = appliedCoupon
     ? coursePrice * (1 - appliedCoupon.discount / 100)
     : coursePrice;
 
+  // --- FUNÇÕES DE MÁSCARA ---
   const maskPhone = (value: string) => {
     return value
       .replace(/\D/g, "")
@@ -37,7 +38,6 @@ export default function CheckoutPage() {
 
   const maskCpfCnpj = (value: string) => {
     const rawValue = value.replace(/\D/g, "");
-
     if (rawValue.length <= 11) {
       return rawValue
         .replace(/(\d{3})(\d)/, "$1.$2")
@@ -121,33 +121,51 @@ export default function CheckoutPage() {
           priority
         />
       </div>
+
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[#D4AF37] mb-2">
             Checkout de Pagamentos - Clube Gestor
           </h1>
           <p className="text-white">
-            Complete sua inscrição no Workshop de Aceleração de Resultados |
-            Jornada de Compra do Cliente
+            Complete sua inscrição no Workshop de Aceleração de Resultados | Jornada de Compra do Cliente
           </p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            {/* Informações de Contato */}
+            
+            {/* NOVO/RESTALRADO: Course Info Card */}
             <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                  Informações de Contato
-                </h3>
+                <div className="flex gap-4">
+                  <img
+                    src="/course-image.jpg"
+                    alt="Workshop de Aceleração de Resultados"
+                    className="w-24 h-24 rounded-lg object-cover"
+                  />
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-slate-900 mb-2">
+                      Workshop de Aceleração de Resultados | Jornada de Compra do Cliente
+                    </h2>
+                    <p className="text-slate-600 text-sm mb-3">
+                      Curso completo de visitação e apreciação artística no Instituto Inhotim
+                    </p>
+                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                      1 Entrada Inteira
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Contact Info */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Informações de Contato</h3>
                 <div className="space-y-4">
                   <div>
-                    <label
-                      htmlFor="name"
-                      className="block text-sm font-medium text-slate-700 mb-2"
-                    >
-                      Nome Completo
-                    </label>
+                    <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">Nome Completo</label>
                     <Input
                       id="name"
                       type="text"
@@ -159,12 +177,7 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="phone"
-                      className="block text-sm font-medium text-slate-700 mb-2"
-                    >
-                      Telefone
-                    </label>
+                    <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">Telefone</label>
                     <Input
                       id="phone"
                       type="tel"
@@ -177,12 +190,7 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium text-slate-700 mb-2"
-                    >
-                      Email
-                    </label>
+                    <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">Email</label>
                     <Input
                       id="email"
                       type="email"
@@ -194,12 +202,7 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="cpfCnpj"
-                      className="block text-sm font-medium text-slate-700 mb-2"
-                    >
-                      CPF ou CNPJ
-                    </label>
+                    <label htmlFor="cpfCnpj" className="block text-sm font-medium text-slate-700 mb-2">CPF ou CNPJ</label>
                     <Input
                       id="cpfCnpj"
                       type="text"
@@ -214,16 +217,13 @@ export default function CheckoutPage() {
               </CardContent>
             </Card>
 
-            {/* Seção de Cupom */}
+            {/* Coupon Section */}
             <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Tag className="w-5 h-5 text-slate-600" />
-                  <h3 className="text-lg font-semibold text-slate-900">
-                    Cupom de Desconto
-                  </h3>
+                  <h3 className="text-lg font-semibold text-slate-900">Cupom de Desconto</h3>
                 </div>
-
                 <div className="space-y-4">
                   <div className="flex gap-2">
                     <Input
@@ -256,8 +256,7 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                       <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                       <p className="text-sm text-emerald-700">
-                        Cupom <strong>{appliedCoupon.code}</strong> aplicado com
-                        sucesso! {appliedCoupon.discount}% de desconto
+                        Cupom <strong>{appliedCoupon.code}</strong> aplicado com sucesso! {appliedCoupon.discount}% de desconto
                       </p>
                     </div>
                   )}
@@ -266,40 +265,28 @@ export default function CheckoutPage() {
             </Card>
           </div>
 
-          {/* Resumo do Pedido */}
+          {/* Sidebar - Summary */}
           <div className="lg:col-span-1">
             <Card className="border-slate-200 shadow-sm sticky top-8">
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                  Resumo do Pedido
-                </h3>
-
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Resumo do Pedido</h3>
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">
-                      Quarta-Feira, 04 de Fevereiro · 09:00 às 12:00
-                    </span>
+                    <span className="text-slate-600">Quarta-Feira, 04 de Fevereiro · 09:00 às 12:00</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-900">INGRESSO</span>
+                    <span className="text-slate-900 uppercase font-bold">Ingresso</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">1 Entrada Inteira</span>
-                    <span className="text-slate-900 font-medium">
-                      R$ {coursePrice.toFixed(2)}
-                    </span>
+                    <span className="text-slate-900 font-medium">R$ {coursePrice.toFixed(2)}</span>
                   </div>
 
                   {appliedCoupon && (
                     <div className="flex justify-between text-sm pt-2 border-t border-slate-200">
+                      <span className="text-emerald-600 font-medium">Desconto ({appliedCoupon.discount}%)</span>
                       <span className="text-emerald-600 font-medium">
-                        Desconto ({appliedCoupon.discount}%)
-                      </span>
-                      <span className="text-emerald-600 font-medium">
-                        -R${" "}
-                        {((coursePrice * appliedCoupon.discount) / 100).toFixed(
-                          2,
-                        )}
+                        -R$ {((coursePrice * appliedCoupon.discount) / 100).toFixed(2)}
                       </span>
                     </div>
                   )}
@@ -307,12 +294,8 @@ export default function CheckoutPage() {
 
                 <div className="pt-4 border-t border-slate-200 mb-6">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-slate-900">
-                      Total
-                    </span>
-                    <span className="text-2xl font-bold text-slate-900">
-                      R$ {finalPrice.toFixed(2)}
-                    </span>
+                    <span className="text-lg font-semibold text-slate-900">Total</span>
+                    <span className="text-2xl font-bold text-slate-900">R$ {finalPrice.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -321,9 +304,7 @@ export default function CheckoutPage() {
                   disabled={!name || !phone || !email || !cpfCnpj}
                   className="w-full bg-[#D4AF37] hover:bg-[#121242]/70 text-[#121242] hover:text-white font-medium py-6 cursor-pointer"
                 >
-                  {finalPrice === 0
-                    ? "Confirmar Inscrição"
-                    : "Ir para Pagamento"}
+                  {finalPrice === 0 ? "Confirmar Inscrição" : "Ir para Pagamento"}
                   <ExternalLink className="w-4 h-4 ml-2" />
                 </Button>
               </CardContent>
