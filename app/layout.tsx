@@ -8,7 +8,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: 'Checkout - Clube Gestor',
-  description: 'Created with v0',
+  description: 'Criado para gerenciar inscrições e pagamentos de eventos do Clube Gestor.',
   generator: 'v0.app',
 }
 
