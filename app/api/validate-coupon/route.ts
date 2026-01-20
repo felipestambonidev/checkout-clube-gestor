@@ -4,11 +4,11 @@ import { docClient, TABLE_NAME, PARTITION_KEY } from "@/lib/dynamodb";
 
 export async function POST(request: Request) {
   try {
-    const { code, email } = await request.json();
+    const { code, name, phone, email, cpfCnpj } = await request.json();
 
-    if (!code || !email) {
+    if (!code || !name || !phone || !email || !cpfCnpj) {
       return NextResponse.json(
-        { error: "Código do cupom e email são obrigatórios" },
+        { error: "Todos os campos são obrigatórios" },
         { status: 400 }
       );
     }
@@ -30,25 +30,46 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar se o cupom já foi usado
-    if (Item.isUsed) {
+    // Verificar limite de usos
+    const usedCount = Item.usedBy ? Item.usedBy.length : 0;
+    const maxUses = Item.maxUses || 1;
+
+    if (usedCount >= maxUses) {
       return NextResponse.json(
-        { error: "Este cupom já foi utilizado" },
+        { error: "Este cupom atingiu o limite de usos" },
         { status: 400 }
       );
     }
 
-    // Marcar cupom como usado
+    // Verificar se este email já usou o cupom
+    const usedBy = Item.usedBy || [];
+    const alreadyUsed = usedBy.some((user: any) => user.email === email);
+
+    if (alreadyUsed) {
+      return NextResponse.json(
+        { error: "Você já utilizou este cupom" },
+        { status: 400 }
+      );
+    }
+
+    // Adicionar novo uso
+    const newUser = {
+      name,
+      phone,
+      email,
+      cpfCnpj,
+      usedAt: new Date().toISOString(),
+    };
+
     const updateCommand = new UpdateCommand({
       TableName: TABLE_NAME,
       Key: {
         [PARTITION_KEY]: `COUPON#${code.toUpperCase()}`,
       },
-      UpdateExpression: "SET isUsed = :used, usedBy = :email, usedAt = :date",
+      UpdateExpression: "SET usedBy = list_append(if_not_exists(usedBy, :empty_list), :new_user)",
       ExpressionAttributeValues: {
-        ":used": true,
-        ":email": email,
-        ":date": new Date().toISOString(),
+        ":empty_list": [],
+        ":new_user": [newUser],
       },
     });
 

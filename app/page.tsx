@@ -8,7 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Tag, AlertCircle, ExternalLink } from "lucide-react";
 
 export default function CheckoutPage() {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [cpfCnpj, setCpfCnpj] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
@@ -23,8 +26,8 @@ export default function CheckoutPage() {
     : coursePrice;
 
   const handleApplyCoupon = async () => {
-    if (!email) {
-      setError("Por favor, insira seu email primeiro");
+    if (!name || !phone || !email || !cpfCnpj) {
+      setError("Por favor, preencha todos os campos de contato primeiro");
       return;
     }
 
@@ -44,7 +47,10 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           code: couponCode,
+          name: name,
+          phone: phone,
           email: email,
+          cpfCnpj: cpfCnpj,
         }),
       });
 
@@ -124,6 +130,38 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   <div>
                     <label
+                      htmlFor="name"
+                      className="block text-sm font-medium text-slate-700 mb-2"
+                    >
+                      Nome Completo
+                    </label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="phone"
+                      className="block text-sm font-medium text-slate-700 mb-2"
+                    >
+                      Telefone
+                    </label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(00) 00000-0000"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label
                       htmlFor="email"
                       className="block text-sm font-medium text-slate-700 mb-2"
                     >
@@ -135,6 +173,22 @@ export default function CheckoutPage() {
                       placeholder="seu@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="cpfCnpj"
+                      className="block text-sm font-medium text-slate-700 mb-2"
+                    >
+                      CPF ou CNPJ
+                    </label>
+                    <Input
+                      id="cpfCnpj"
+                      type="text"
+                      placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                      value={cpfCnpj}
+                      onChange={(e) => setCpfCnpj(e.target.value)}
                       className="w-full"
                     />
                   </div>
@@ -250,16 +304,16 @@ export default function CheckoutPage() {
 
                 <Button
                   onClick={handleProceedToPayment}
-                  disabled={!email}
+                  disabled={!name || !phone || !email || !cpfCnpj}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-6"
                 >
                   {finalPrice === 0 ? "Confirmar Inscrição" : "Ir para Pagamento"}
                   <ExternalLink className="w-4 h-4 ml-2" />
                 </Button>
 
-                {!email && (
+                {(!name || !phone || !email || !cpfCnpj) && (
                   <p className="text-xs text-slate-500 text-center mt-3">
-                    Insira seu email para continuar
+                    Preencha todos os campos de contato para continuar
                   </p>
                 )}
               </CardContent>
