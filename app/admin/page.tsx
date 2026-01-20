@@ -1,8 +1,6 @@
 "use client";
 
 import React from "react";
-
-import LogoClube from "../../public/logo-clube-gestor.png";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -169,7 +167,7 @@ export default function AdminPage() {
       <div className="min-h-screen bg-[#121242]">
         <div className="flex flex-col items-center text-center pt-10">
           <Image
-            src={LogoClube}
+            src="/logo-clube-gestor.png"
             alt="Clube Gestor"
             width={280}
             height={130}
@@ -234,7 +232,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-[#121242]">
       <div className="flex flex-col items-center text-center pt-10">
         <Image
-          src={LogoClube}
+          src="/logo-clube-gestor.png"
           alt="Clube Gestor"
           width={280}
           height={130}
@@ -274,7 +272,7 @@ export default function AdminPage() {
           <Card className="border-slate-200">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-[#C0992E]/30 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-lg bg-[#C0992E]/30  flex items-center justify-center">
                   <Users className="w-6 h-6 text-[#C0992E]" />
                 </div>
                 <div>

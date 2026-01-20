@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Tag, AlertCircle, ExternalLink } from "lucide-react";
-import LogoClube from "../public/logo-clube-gestor.png";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import LogoClube from "@/public/logo-clube.svg"; // Declare the LogoClube variable
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -104,7 +106,39 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleProceedToPayment = () => {
+  const handleProceedToPayment = async () => {
+    // Enviar dados para o webhook do n8n via API route (evita CORS)
+    try {
+      const webhookData = {
+        name,
+        phone,
+        email,
+        cpfCnpj,
+        couponCode: appliedCoupon?.code || "",
+        finalPrice,
+        timestamp: new Date().toISOString(),
+      };
+      
+      const response = await fetch("/api/send-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(webhookData),
+      });
+
+      if (!response.ok) {
+        console.error("[v0] Error sending webhook:", await response.text());
+      }
+    } catch (error) {
+      console.error("[v0] Error sending to webhook:", error);
+    }
+
+    // Se o valor for 0, redireciona para página de agradecimento
+    if (finalPrice === 0) {
+      router.push("/obrigado");
+      return;
+    }
+
+    // Se houver valor, redireciona para pagamento
     const paymentLink = "https://www.asaas.com/c/odfjkhnshezee7wc";
     window.open(paymentLink, "_blank");
   };
@@ -113,7 +147,7 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-[#121242]">
       <div className="flex flex-col items-center text-center pt-10">
         <Image
-          src={LogoClube}
+          src="/logo-clube-gestor.png"
           alt="Clube Gestor"
           width={280}
           height={130}
@@ -299,13 +333,21 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
+                {finalPrice === 0 && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700 text-center">
+                      Clique no botão, para criar o usuário no MemberKit e receba o login e senha no seu e-mail!
+                    </p>
+                  </div>
+                )}
+
                 <Button
                   onClick={handleProceedToPayment}
                   disabled={!name || !phone || !email || !cpfCnpj}
                   className="w-full bg-[#D4AF37] hover:bg-[#121242]/70 text-[#121242] hover:text-white font-medium py-6 cursor-pointer"
                 >
                   {finalPrice === 0 ? "Confirmar Inscrição" : "Ir para Pagamento"}
-                  <ExternalLink className="w-4 h-4 ml-2" />
+                  {finalPrice > 0 && <ExternalLink className="w-4 h-4 ml-2" />}
                 </Button>
               </CardContent>
             </Card>
