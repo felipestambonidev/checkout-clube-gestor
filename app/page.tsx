@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Tag, AlertCircle, ExternalLink } from "lucide-react";
-import LogoClube from "../public/logo-clube-gestor.png"
+import LogoClube from "../public/logo-clube-gestor.png";
 import Image from "next/image";
 
 export default function CheckoutPage() {
@@ -22,10 +22,40 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const coursePrice = 474.90;
+  const coursePrice = 474.9;
   const finalPrice = appliedCoupon
     ? coursePrice * (1 - appliedCoupon.discount / 100)
     : coursePrice;
+
+  const maskPhone = (value: string) => {
+    return value
+      .replace(/\D/g, "")
+      .replace(/(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{5})(\d)/, "$1-$2")
+      .replace(/(-\d{4})\d+?$/, "$1");
+  };
+
+  const maskCpfCnpj = (value: string) => {
+    const rawValue = value.replace(/\D/g, "");
+
+    if (rawValue.length <= 11) {
+      return rawValue
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    } else {
+      return rawValue
+        .replace(/^(\d{2})(\d)/, "$1.$2")
+        .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+        .replace(/\.(\d{3})(\d)/, ".$1/$2")
+        .replace(/(\d{4})(\d)/, "$1-$2")
+        .replace(/(-\d{2})\d+?$/, "$1");
+    }
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value.trim().toLowerCase());
+  };
 
   const handleApplyCoupon = async () => {
     if (!name || !phone || !email || !cpfCnpj) {
@@ -44,15 +74,13 @@ export default function CheckoutPage() {
     try {
       const response = await fetch("/api/validate-coupon", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: couponCode,
-          name: name,
-          phone: phone,
-          email: email,
-          cpfCnpj: cpfCnpj,
+          name,
+          phone,
+          email,
+          cpfCnpj,
         }),
       });
 
@@ -77,7 +105,6 @@ export default function CheckoutPage() {
   };
 
   const handleProceedToPayment = () => {
-    // Aqui você coloca o link da plataforma de pagamento externa
     const paymentLink = "https://www.asaas.com/c/odfjkhnshezee7wc";
     window.open(paymentLink, "_blank");
   };
@@ -85,55 +112,29 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-[#121242]">
       <div className="flex flex-col items-center text-center pt-10">
-         <Image
-            src={LogoClube}
-            alt="Clube Gestor"
-            width={280}
-            height={130}
-            className="h-12 md:h-20 w-auto" 
-            priority
-          />
+        <Image
+          src={LogoClube}
+          alt="Clube Gestor"
+          width={280}
+          height={130}
+          className="h-12 md:h-20 w-auto"
+          priority
+        />
       </div>
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[#D4AF37] mb-2">
             Checkout de Pagamentos - Clube Gestor
           </h1>
           <p className="text-white">
-            Complete sua inscrição no Workshop de Aceleração de Resultados | Jornada de Compra do Cliente
+            Complete sua inscrição no Workshop de Aceleração de Resultados |
+            Jornada de Compra do Cliente
           </p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Course Info */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex gap-4">
-                  <img 
-                    src="/course-image.jpg" 
-                    alt="Workshop de Aceleração de Resultados"
-                    className="w-24 h-24 rounded-lg"
-                  />
-                  <div className="flex-1">
-                    <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                      Workshop de Aceleração de Resultados | Jornada de Compra do Cliente
-                    </h2>
-                    <p className="text-slate-600 text-sm mb-3">
-                      Curso completo de visitação e apreciação artística no
-                      Instituto Inhotim
-                    </p>
-                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                      1 Entrada Inteira
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Contact Info */}
+            {/* Informações de Contato */}
             <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">
@@ -156,6 +157,7 @@ export default function CheckoutPage() {
                       className="w-full"
                     />
                   </div>
+
                   <div>
                     <label
                       htmlFor="phone"
@@ -168,10 +170,12 @@ export default function CheckoutPage() {
                       type="tel"
                       placeholder="(00) 00000-0000"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(maskPhone(e.target.value))}
+                      maxLength={15}
                       className="w-full"
                     />
                   </div>
+
                   <div>
                     <label
                       htmlFor="email"
@@ -184,10 +188,11 @@ export default function CheckoutPage() {
                       type="email"
                       placeholder="seu@email.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => handleEmailChange(e.target.value)}
                       className="w-full"
                     />
                   </div>
+
                   <div>
                     <label
                       htmlFor="cpfCnpj"
@@ -200,7 +205,8 @@ export default function CheckoutPage() {
                       type="text"
                       placeholder="000.000.000-00 ou 00.000.000/0000-00"
                       value={cpfCnpj}
-                      onChange={(e) => setCpfCnpj(e.target.value)}
+                      onChange={(e) => setCpfCnpj(maskCpfCnpj(e.target.value))}
+                      maxLength={18}
                       className="w-full"
                     />
                   </div>
@@ -208,7 +214,7 @@ export default function CheckoutPage() {
               </CardContent>
             </Card>
 
-            {/* Coupon Section */}
+            {/* Seção de Cupom */}
             <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4">
@@ -260,7 +266,7 @@ export default function CheckoutPage() {
             </Card>
           </div>
 
-          {/* Sidebar - Order Summary */}
+          {/* Resumo do Pedido */}
           <div className="lg:col-span-1">
             <Card className="border-slate-200 shadow-sm sticky top-8">
               <CardContent className="p-6">
@@ -270,7 +276,9 @@ export default function CheckoutPage() {
 
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Quarta - Feira, 04 de Fevereiro · 09:00 ás 12:00</span>
+                    <span className="text-slate-600">
+                      Quarta-Feira, 04 de Fevereiro · 09:00 às 12:00
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-900">INGRESSO</span>
@@ -289,10 +297,9 @@ export default function CheckoutPage() {
                       </span>
                       <span className="text-emerald-600 font-medium">
                         -R${" "}
-                        {(
-                          (coursePrice * appliedCoupon.discount) /
-                          100
-                        ).toFixed(2)}
+                        {((coursePrice * appliedCoupon.discount) / 100).toFixed(
+                          2,
+                        )}
                       </span>
                     </div>
                   )}
@@ -307,11 +314,6 @@ export default function CheckoutPage() {
                       R$ {finalPrice.toFixed(2)}
                     </span>
                   </div>
-                  {finalPrice === 0 && (
-                    <p className="text-sm text-emerald-600 mt-2 font-medium">
-                      Entrada gratuita com cupom!
-                    </p>
-                  )}
                 </div>
 
                 <Button
@@ -319,15 +321,11 @@ export default function CheckoutPage() {
                   disabled={!name || !phone || !email || !cpfCnpj}
                   className="w-full bg-[#D4AF37] hover:bg-[#121242]/70 text-[#121242] hover:text-white font-medium py-6 cursor-pointer"
                 >
-                  {finalPrice === 0 ? "Confirmar Inscrição" : "Ir para Pagamento"}
-                  <ExternalLink className="w-4 h-4 ml-2 text-[#121242] hover:text-white" />
+                  {finalPrice === 0
+                    ? "Confirmar Inscrição"
+                    : "Ir para Pagamento"}
+                  <ExternalLink className="w-4 h-4 ml-2" />
                 </Button>
-
-                {(!name || !phone || !email || !cpfCnpj) && (
-                  <p className="text-xs text-slate-500 text-center mt-3">
-                    Preencha todos os campos de contato para continuar
-                  </p>
-                )}
               </CardContent>
             </Card>
           </div>
