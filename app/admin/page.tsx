@@ -233,15 +233,15 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#121242]">
       <div className="flex flex-col items-center text-center pt-10">
-          <Image
-            src={LogoClube}
-            alt="Clube Gestor"
-            width={280}
-            height={130}
-            className="h-12 md:h-20 w-auto"
-            priority
-          />
-        </div>
+        <Image
+          src={LogoClube}
+          alt="Clube Gestor"
+          width={280}
+          height={130}
+          className="h-12 md:h-20 w-auto"
+          priority
+        />
+      </div>
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
@@ -425,39 +425,76 @@ export default function AdminPage() {
                                 Ver Usuários
                               </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            {/* ... dentro do map de cupons ... */}
+                            <DialogContent className="max-w-4xl w-[95vw] overflow-hidden flex flex-col">
                               {selectedCoupon && (
-                                <div>
-                                  <DialogHeader>
-                                    <DialogTitle>
-                                      Usuários que usaram o cupom{" "}
-                                      {selectedCoupon.code}
+                                <div className="flex flex-col h-full">
+                                  <DialogHeader className="mb-4">
+                                    <DialogTitle className="text-[#121242] text-xl">
+                                      Usuários que usaram o cupom:{" "}
+                                      <span className="text-[#C0992E] font-bold">
+                                        {selectedCoupon.code}
+                                      </span>
                                     </DialogTitle>
                                   </DialogHeader>
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead>Nome</TableHead>
-                                        <TableHead>Telefone</TableHead>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>CPF/CNPJ</TableHead>
-                                        <TableHead>Usado em</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {selectedCoupon.usedBy.map((user) => (
-                                        <TableRow key={user.email}>
-                                          <TableCell>{user.name}</TableCell>
-                                          <TableCell>{user.phone}</TableCell>
-                                          <TableCell>{user.email}</TableCell>
-                                          <TableCell>{user.cpfCnpj}</TableCell>
-                                          <TableCell className="text-sm text-slate-600">
-                                            {formatDate(user.usedAt)}
-                                          </TableCell>
+
+                                  {/* Wrapper para permitir scroll horizontal na tabela */}
+                                  <div className="rounded-md border border-slate-200 overflow-x-auto">
+                                    <Table>
+                                      <TableHeader className="bg-slate-50">
+                                        <TableRow>
+                                          <TableHead className="whitespace-nowrap">
+                                            Nome
+                                          </TableHead>
+                                          <TableHead className="whitespace-nowrap">
+                                            Telefone
+                                          </TableHead>
+                                          <TableHead className="whitespace-nowrap">
+                                            Email
+                                          </TableHead>
+                                          <TableHead className="whitespace-nowrap">
+                                            CPF/CNPJ
+                                          </TableHead>
+                                          <TableHead className="whitespace-nowrap text-right">
+                                            Usado em
+                                          </TableHead>
                                         </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {selectedCoupon.usedBy.length > 0 ? (
+                                          selectedCoupon.usedBy.map((user) => (
+                                            <TableRow key={user.email}>
+                                              <TableCell className="font-medium whitespace-nowrap">
+                                                {user.name}
+                                              </TableCell>
+                                              <TableCell className="whitespace-nowrap">
+                                                {user.phone}
+                                              </TableCell>
+                                              <TableCell>
+                                                {user.email}
+                                              </TableCell>
+                                              <TableCell className="whitespace-nowrap">
+                                                {user.cpfCnpj}
+                                              </TableCell>
+                                              <TableCell className="text-right text-sm text-slate-600 whitespace-nowrap">
+                                                {formatDate(user.usedAt)}
+                                              </TableCell>
+                                            </TableRow>
+                                          ))
+                                        ) : (
+                                          <TableRow>
+                                            <TableCell
+                                              colSpan={5}
+                                              className="text-center py-4 text-slate-500"
+                                            >
+                                              Nenhum uso registrado para este
+                                              cupom.
+                                            </TableCell>
+                                          </TableRow>
+                                        )}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
                                 </div>
                               )}
                             </DialogContent>
