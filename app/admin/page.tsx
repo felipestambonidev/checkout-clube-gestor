@@ -244,8 +244,102 @@ export default function AdminPage() {
               </div>
             </CardContent>
           </Card>
-          {/* Other stats cards here */}
+
+          <Card className="border-slate-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Cupons Utilizados</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {coupons.reduce((acc, c) => acc + c.usedCount, 0)}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Cupons Ativos</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {coupons.filter((c) => c.usedCount < c.maxUses).length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Create Coupon Form */}
+        <Card className="border-slate-200 mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Criar Novo Cupom
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateCoupon} className="space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Código do Cupom
+                  </label>
+                  <Input
+                    type="text"
+                    value={newCode}
+                    onChange={(e) => setNewCode(e.target.value)}
+                    placeholder="Ex: PROMO100"
+                    required
+                    className="uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Desconto (%)
+                  </label>
+                  <Input
+                    type="number"
+                    value={newDiscount}
+                    onChange={(e) => setNewDiscount(e.target.value)}
+                    placeholder="100"
+                    min="0"
+                    max="100"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Quantidade de Usos
+                  </label>
+                  <Input
+                    type="number"
+                    value={newMaxUses}
+                    onChange={(e) => setNewMaxUses(e.target.value)}
+                    placeholder="10"
+                    min="1"
+                    required
+                  />
+                </div>
+              </div>
+              <Button
+                type="submit"
+                disabled={creating}
+                className="w-full md:w-auto bg-blue-600 hover:bg-blue-700"
+              >
+                {creating ? "Criando..." : "Criar Cupom"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
         {/* Coupons Table */}
         <Card className="border-slate-200">
