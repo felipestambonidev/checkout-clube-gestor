@@ -164,7 +164,7 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center px-4">
         <Card className="w-full max-w-md border-slate-200">
           <CardHeader>
             <CardTitle className="text-2xl text-center">
@@ -215,12 +215,12 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Painel Administrativo
+            Painel Administrativo - Clube Gestor
           </h1>
           <p className="text-slate-600">
             Gerencie cupons e visualize quem os utilizou

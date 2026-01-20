@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Tag, AlertCircle, ExternalLink } from "lucide-react";
+import LogoClube from "../public/logo-clube-gestor.png"
+import Image from "next/image";
 
 export default function CheckoutPage() {
   const [name, setName] = useState("");
@@ -20,7 +22,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const coursePrice = 65.0;
+  const coursePrice = 474.90;
   const finalPrice = appliedCoupon
     ? coursePrice * (1 - appliedCoupon.discount / 100)
     : coursePrice;
@@ -76,20 +78,30 @@ export default function CheckoutPage() {
 
   const handleProceedToPayment = () => {
     // Aqui você coloca o link da plataforma de pagamento externa
-    const paymentLink = "https://seu-link-de-pagamento.com";
+    const paymentLink = "https://www.asaas.com/c/odfjkhnshezee7wc";
     window.open(paymentLink, "_blank");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-[#121242]">
+      <div className="flex flex-col items-center text-center pt-10">
+         <Image
+            src={LogoClube}
+            alt="Clube Gestor"
+            width={280}
+            height={130}
+            className="h-12 md:h-20 w-auto" 
+            priority
+          />
+      </div>
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Checkout do Curso
+          <h1 className="text-3xl font-bold text-[#D4AF37] mb-2">
+            Checkout de Pagamentos - Clube Gestor
           </h1>
-          <p className="text-slate-600">
-            Complete sua inscrição no Instituto Inhotim 2026
+          <p className="text-white">
+            Complete sua inscrição no Workshop de Aceleração de Resultados | Jornada de Compra do Cliente
           </p>
         </div>
 
@@ -103,11 +115,11 @@ export default function CheckoutPage() {
                   <img 
                     src="/course-image.jpg" 
                     alt="Instituto Inhotim 2026"
-                    className="w-24 h-24 rounded-lg object-cover flex-shrink-0"
+                    className="w-24 h-24 rounded-lg object-cover shrink-0"
                   />
                   <div className="flex-1">
                     <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                      Instituto Inhotim 2026
+                      Workshop de Aceleração de Resultados | Jornada de Compra do Cliente
                     </h2>
                     <p className="text-slate-600 text-sm mb-3">
                       Curso completo de visitação e apreciação artística no
@@ -221,7 +233,7 @@ export default function CheckoutPage() {
                     <Button
                       onClick={handleApplyCoupon}
                       disabled={loading || !!appliedCoupon}
-                      className="bg-emerald-600 hover:bg-emerald-700"
+                      className="bg-[#D4AF37] hover:bg-[#D4AF37]/50 text-[#121242] cursor-pointer"
                     >
                       {loading ? "Validando..." : "Aplicar"}
                     </Button>
@@ -229,14 +241,14 @@ export default function CheckoutPage() {
 
                   {error && (
                     <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                      <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
                       <p className="text-sm text-red-700">{error}</p>
                     </div>
                   )}
 
                   {appliedCoupon && (
                     <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                       <p className="text-sm text-emerald-700">
                         Cupom <strong>{appliedCoupon.code}</strong> aplicado com
                         sucesso! {appliedCoupon.discount}% de desconto
@@ -258,7 +270,7 @@ export default function CheckoutPage() {
 
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Sexta, 23 de Jan · 09:30</span>
+                    <span className="text-slate-600">Quarta - Feira, 04 de Fevereiro · 09:00 ás 12:00</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-900">INGRESSO</span>
@@ -305,10 +317,10 @@ export default function CheckoutPage() {
                 <Button
                   onClick={handleProceedToPayment}
                   disabled={!name || !phone || !email || !cpfCnpj}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-6"
+                  className="w-full bg-[#D4AF37] hover:bg-[#121242]/70 text-[#121242] hover:text-white font-medium py-6 cursor-pointer"
                 >
                   {finalPrice === 0 ? "Confirmar Inscrição" : "Ir para Pagamento"}
-                  <ExternalLink className="w-4 h-4 ml-2" />
+                  <ExternalLink className="w-4 h-4 ml-2 text-[#121242] hover:text-white" />
                 </Button>
 
                 {(!name || !phone || !email || !cpfCnpj) && (
