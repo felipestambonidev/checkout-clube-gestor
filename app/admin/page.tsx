@@ -164,10 +164,10 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#121242] flex items-center justify-center px-4">
         <Card className="w-full max-w-md border-slate-200">
           <CardHeader>
-            <CardTitle className="text-2xl text-center">
+            <CardTitle className="text-2xl text-center text-[#121242]">
               Login Administrativo
             </CardTitle>
           </CardHeader>

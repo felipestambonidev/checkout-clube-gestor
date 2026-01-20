@@ -114,8 +114,8 @@ export default function CheckoutPage() {
                 <div className="flex gap-4">
                   <img 
                     src="/course-image.jpg" 
-                    alt="Instituto Inhotim 2026"
-                    className="w-24 h-24 rounded-lg object-cover shrink-0"
+                    alt="Workshop de Aceleração de Resultados"
+                    className="w-24 h-24 rounded-lg"
                   />
                   <div className="flex-1">
                     <h2 className="text-xl font-semibold text-slate-900 mb-2">
