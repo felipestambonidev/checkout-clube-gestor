@@ -2,6 +2,8 @@
 
 import React from "react";
 
+import LogoClube from "../../public/logo-clube-gestor.png";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -164,65 +166,89 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#121242] flex items-center justify-center px-4">
-        <Card className="w-full max-w-md border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center text-[#121242]">
-              Login Administrativo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Usuário
-                </label>
-                <Input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Digite seu usuário"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Senha
-                </label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Digite sua senha"
-                  required
-                />
-              </div>
-              {authError && (
-                <p className="text-sm text-red-600 text-center">{authError}</p>
-              )}
-              <Button
-                type="submit"
-                disabled={loggingIn}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                {loggingIn ? "Entrando..." : "Entrar"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-[#121242]">
+        <div className="flex flex-col items-center text-center pt-10">
+          <Image
+            src={LogoClube}
+            alt="Clube Gestor"
+            width={280}
+            height={130}
+            className="h-12 md:h-20 w-auto"
+            priority
+          />
+        </div>
+        <div className="flex items-center justify-center px-4 mt-10">
+          <Card className="w-full max-w-md border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-2xl text-center text-[#121242]">
+                Login Administrativo <br /> Clube Gestor
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Usuário
+                  </label>
+                  <Input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Digite seu usuário"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Senha
+                  </label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Digite sua senha"
+                    required
+                  />
+                </div>
+                {authError && (
+                  <p className="text-sm text-red-600 text-center">
+                    {authError}
+                  </p>
+                )}
+                <Button
+                  type="submit"
+                  disabled={loggingIn}
+                  className="w-full bg-[#C0992E] hover:bg-[#C0992E] text-[#121242] cursor-pointer"
+                >
+                  {loggingIn ? "Entrando..." : "Entrar"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-[#121242]">
+      <div className="flex flex-col items-center text-center pt-10">
+          <Image
+            src={LogoClube}
+            alt="Clube Gestor"
+            width={280}
+            height={130}
+            className="h-12 md:h-20 w-auto"
+            priority
+          />
+        </div>
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+          <h1 className="text-3xl font-bold text-white mb-2">
             Painel Administrativo - Clube Gestor
           </h1>
-          <p className="text-slate-600">
+          <p className="text-[#c0992e]">
             Gerencie cupons e visualize quem os utilizou
           </p>
         </div>
@@ -232,11 +258,11 @@ export default function AdminPage() {
           <Card className="border-slate-200">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Tag className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 rounded-lg bg-[#C0992E]/30 flex items-center justify-center">
+                  <Tag className="w-6 h-6 text-[#C0992E]" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Total de Cupons</p>
+                  <p className="text-sm text-[#121242]">Total de Cupons</p>
                   <p className="text-2xl font-bold text-slate-900">
                     {coupons.length}
                   </p>
@@ -248,11 +274,11 @@ export default function AdminPage() {
           <Card className="border-slate-200">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-emerald-600" />
+                <div className="w-12 h-12 rounded-lg bg-[#C0992E]/30 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-[#C0992E]" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Cupons Utilizados</p>
+                  <p className="text-sm text-[#121242]">Cupons Utilizados</p>
                   <p className="text-2xl font-bold text-slate-900">
                     {coupons.reduce((acc, c) => acc + c.usedCount, 0)}
                   </p>
@@ -264,11 +290,11 @@ export default function AdminPage() {
           <Card className="border-slate-200">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-purple-600" />
+                <div className="w-12 h-12 rounded-lg bg-[#C0992E]/30  flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-[#C0992E]" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Cupons Ativos</p>
+                  <p className="text-sm text-[#121242]">Cupons Ativos</p>
                   <p className="text-2xl font-bold text-slate-900">
                     {coupons.filter((c) => c.usedCount < c.maxUses).length}
                   </p>
@@ -333,7 +359,7 @@ export default function AdminPage() {
               <Button
                 type="submit"
                 disabled={creating}
-                className="w-full md:w-auto bg-blue-600 hover:bg-blue-700"
+                className="w-full md:w-auto bg-[#C0992E] hover:bg-[#C0992E]/30 text-[#121242] cursor-pointer"
               >
                 {creating ? "Criando..." : "Criar Cupom"}
               </Button>
@@ -368,11 +394,17 @@ export default function AdminPage() {
                       </TableCell>
                       <TableCell>
                         {coupon.usedCount >= coupon.maxUses ? (
-                          <Badge variant="secondary" className="bg-red-50 text-red-700 border-red-200">
+                          <Badge
+                            variant="secondary"
+                            className="bg-red-50 text-red-700 border-red-200"
+                          >
                             Esgotado
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                          <Badge
+                            variant="secondary"
+                            className="bg-emerald-50 text-emerald-700 border-emerald-200"
+                          >
                             Ativo
                           </Badge>
                         )}
@@ -397,7 +429,10 @@ export default function AdminPage() {
                               {selectedCoupon && (
                                 <div>
                                   <DialogHeader>
-                                    <DialogTitle>Usuários que usaram o cupom {selectedCoupon.code}</DialogTitle>
+                                    <DialogTitle>
+                                      Usuários que usaram o cupom{" "}
+                                      {selectedCoupon.code}
+                                    </DialogTitle>
                                   </DialogHeader>
                                   <Table>
                                     <TableHeader>
