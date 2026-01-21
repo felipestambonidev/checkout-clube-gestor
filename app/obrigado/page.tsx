@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Home } from "lucide-react";
@@ -8,6 +9,17 @@ import { useRouter } from "next/navigation";
 
 export default function ThankYouPage() {
   const router = useRouter();
+
+  // Verificar se o usuário tem permissão para acessar esta página
+  React.useEffect(() => {
+    const isConfirmed = sessionStorage.getItem("registration_confirmed");
+    if (!isConfirmed) {
+      router.push("/");
+    } else {
+      // Remover o token após verificação para evitar reutilização
+      sessionStorage.removeItem("registration_confirmed");
+    }
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#121242] via-[#1a1a5e] to-[#121242]">

@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Tag, AlertCircle, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import LogoClube from "@/public/logo-clube.svg"; // Declare the LogoClube variable
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -134,6 +133,7 @@ export default function CheckoutPage() {
 
     // Se o valor for 0, redireciona para página de agradecimento
     if (finalPrice === 0) {
+      sessionStorage.setItem("registration_confirmed", "true");
       router.push("/obrigado");
       return;
     }
