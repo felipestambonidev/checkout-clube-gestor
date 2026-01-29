@@ -180,7 +180,7 @@ export default function CheckoutPage() {
                   />
                   <div className="flex-1">
                     <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                      Workshop de Aceleração de Resultados | Jornada de Compra do Cliente
+                      Workshop de Aceleração | Jornada de Compra do Cliente
                     </h2>
                     <p className="text-slate-600 text-sm mb-3">
                       Curso completo com carga horária de 3 horas, ministrado por especialistas do Clube Gestor.
