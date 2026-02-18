@@ -162,7 +162,7 @@ export default function CheckoutPage() {
             Checkout de Pagamentos - Clube Gestor
           </h1>
           <p className="text-white">
-            Complete sua inscrição no Workshop de Aceleração | Gestão do Temp
+            Complete sua inscrição no Workshop de Aceleração | Gestão do Tempo
           </p>
         </div>
 
