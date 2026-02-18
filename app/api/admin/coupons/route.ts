@@ -41,6 +41,49 @@ export async function POST(request: Request) {
   }
 }
 
+// Auto-seed default coupons if table is empty
+async function seedDefaultCoupons() {
+  const defaultCoupons = [
+    {
+      code: "DESCONTO100",
+      discount: 100,
+      maxUses: 100,
+      description: "Desconto de 100% - Entrada gratuita",
+    },
+    {
+      code: "PROMO100",
+      discount: 100,
+      maxUses: 100,
+      description: "Promocao especial - 100% off",
+    },
+    {
+      code: "BEMVINDO",
+      discount: 100,
+      maxUses: 100,
+      description: "Cupom de boas-vindas - 100% off",
+    },
+  ];
+
+  for (const coupon of defaultCoupons) {
+    await docClient.send(
+      new PutCommand({
+        TableName: TABLE_NAME,
+        Item: {
+          [PARTITION_KEY]: `COUPON#${coupon.code}`,
+          code: coupon.code,
+          discount: coupon.discount,
+          maxUses: coupon.maxUses,
+          description: coupon.description,
+          usedBy: [],
+          createdAt: new Date().toISOString(),
+        },
+      })
+    );
+  }
+
+  console.log("[v0] Auto-seeded default coupons:", defaultCoupons.map((c) => c.code));
+}
+
 // Listar todos os cupons
 export async function GET() {
   try {
@@ -51,7 +94,7 @@ export async function GET() {
     const { Items } = await docClient.send(scanCommand);
 
     // Filtrar apenas cupons (não outros tipos de dados)
-    const coupons = (Items || [])
+    let coupons = (Items || [])
       .filter((item) => item[PARTITION_KEY]?.startsWith("COUPON#"))
       .map((item) => ({
         code: item.code,
@@ -62,6 +105,28 @@ export async function GET() {
         createdAt: item.createdAt,
       }))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // If no coupons exist, auto-seed and re-fetch
+    if (coupons.length === 0) {
+      console.log("[v0] No coupons found, auto-seeding defaults...");
+      await seedDefaultCoupons();
+
+      const reScan = await docClient.send(
+        new ScanCommand({ TableName: TABLE_NAME })
+      );
+
+      coupons = (reScan.Items || [])
+        .filter((item) => item[PARTITION_KEY]?.startsWith("COUPON#"))
+        .map((item) => ({
+          code: item.code,
+          discount: item.discount,
+          maxUses: item.maxUses || 1,
+          usedCount: item.usedBy ? item.usedBy.length : 0,
+          usedBy: item.usedBy || [],
+          createdAt: item.createdAt,
+        }))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
 
     return NextResponse.json({ coupons });
   } catch (error) {
