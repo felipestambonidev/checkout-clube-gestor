@@ -6,6 +6,7 @@ const client = new DynamoDBClient({
   region: process.env.AWS_REGION,
   credentials: awsCredentialsProvider({
     roleArn: process.env.AWS_ROLE_ARN!,
+    clientConfig: { region: process.env.AWS_REGION },
   }),
 });
 
