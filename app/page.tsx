@@ -14,6 +14,7 @@ export default function CheckoutPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -59,7 +60,7 @@ export default function CheckoutPage() {
   };
 
   const handleApplyCoupon = async () => {
-    if (!name || !phone || !email || !cpfCnpj) {
+    if (!name || !phone || !email || !company || !cpfCnpj) {
       setError("Por favor, preencha todos os campos de contato primeiro");
       return;
     }
@@ -81,6 +82,7 @@ export default function CheckoutPage() {
           name,
           phone,
           email,
+          company,
           cpfCnpj,
         }),
       });
@@ -112,6 +114,7 @@ export default function CheckoutPage() {
         name,
         phone,
         email,
+        company,
         cpfCnpj,
         couponCode: appliedCoupon?.code || "",
         finalPrice,
@@ -236,6 +239,18 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
+                    <label htmlFor="company" className="block text-sm font-medium text-slate-700 mb-2">Sua Empresa</label>
+                    <Input
+                      id="company"
+                      type="text"
+                      placeholder="Nome da sua empresa"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div>
                     <label htmlFor="cpfCnpj" className="block text-sm font-medium text-slate-700 mb-2">CPF ou CNPJ</label>
                     <Input
                       id="cpfCnpj"
@@ -343,7 +358,7 @@ export default function CheckoutPage() {
 
                 <Button
                   onClick={handleProceedToPayment}
-                  disabled={!name || !phone || !email || !cpfCnpj}
+                  disabled={!name || !phone || !email || !company || !cpfCnpj}
                   className="w-full bg-[#D4AF37] hover:bg-[#121242]/70 text-[#121242] hover:text-white font-medium py-6 cursor-pointer"
                 >
                   {finalPrice === 0 ? "Confirmar Inscrição" : "Ir para Pagamento"}
