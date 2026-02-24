@@ -4,9 +4,9 @@ import { docClient, TABLE_NAME, PARTITION_KEY } from "@/lib/dynamodb";
 
 export async function POST(request: Request) {
   try {
-    const { code, name, phone, email, cpfCnpj } = await request.json();
+    const { code, name, phone, email, company, cpfCnpj } = await request.json();
 
-    if (!code || !name || !phone || !email || !cpfCnpj) {
+    if (!code || !name || !phone || !email || !company || !cpfCnpj) {
       return NextResponse.json(
         { error: "Todos os campos são obrigatórios" },
         { status: 400 }
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
       name,
       phone,
       email,
+      company,
       cpfCnpj,
       usedAt: new Date().toISOString(),
     };

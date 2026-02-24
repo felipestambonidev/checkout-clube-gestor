@@ -33,6 +33,7 @@ interface Coupon {
     name: string;
     phone: string;
     email: string;
+    company: string;
     cpfCnpj: string;
     usedAt: string;
   }>;
@@ -451,6 +452,9 @@ export default function AdminPage() {
                                             Email
                                           </TableHead>
                                           <TableHead className="whitespace-nowrap">
+                                            Empresa
+                                          </TableHead>
+                                          <TableHead className="whitespace-nowrap">
                                             CPF/CNPJ
                                           </TableHead>
                                           <TableHead className="whitespace-nowrap text-right">
@@ -472,6 +476,9 @@ export default function AdminPage() {
                                                 {user.email}
                                               </TableCell>
                                               <TableCell className="whitespace-nowrap">
+                                                {user.company || "-"}
+                                              </TableCell>
+                                              <TableCell className="whitespace-nowrap">
                                                 {user.cpfCnpj}
                                               </TableCell>
                                               <TableCell className="text-right text-sm text-slate-600 whitespace-nowrap">
@@ -482,7 +489,7 @@ export default function AdminPage() {
                                         ) : (
                                           <TableRow>
                                             <TableCell
-                                              colSpan={5}
+                                              colSpan={6}
                                               className="text-center py-4 text-slate-500"
                                             >
                                               Nenhum uso registrado para este
