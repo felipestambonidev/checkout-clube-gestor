@@ -77,7 +77,7 @@ export default function CheckoutPage() {
           ? "Email inválido"
           : ""
       : "",
-    company: touched.company && !company.trim() ? "Sua Empresa é obrigatória" : "",
+    company: touched.company && !company.trim() ? "Empresa é obrigatória" : "",
   };
 
   const handleApplyCoupon = async () => {
@@ -279,12 +279,12 @@ export default function CheckoutPage() {
 
                   <div>
                     <label htmlFor="company" className="block text-sm font-medium text-slate-700 mb-2">
-                      Sua Empresa <span className="text-red-500">*</span>
+                      Empresa <span className="text-red-500">*</span>
                     </label>
                     <Input
                       id="company"
                       type="text"
-                      placeholder="Nome da sua empresa"
+                      placeholder="Nome da sua empresa ou Empresa que você é colaborador"
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
                       onBlur={() => handleBlur("company")}
