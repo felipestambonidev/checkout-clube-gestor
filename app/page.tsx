@@ -23,6 +23,7 @@ export default function CheckoutPage() {
   } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const coursePrice = 474.90;
   const finalPrice = appliedCoupon
@@ -57,6 +58,26 @@ export default function CheckoutPage() {
 
   const handleEmailChange = (value: string) => {
     setEmail(value.trim().toLowerCase());
+  };
+
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const isValidEmail = (value: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  const fieldErrors = {
+    name: touched.name && !name.trim() ? "Nome Completo é obrigatório" : "",
+    phone: touched.phone && !phone.trim() ? "Telefone é obrigatório" : "",
+    email: touched.email
+      ? !email.trim()
+        ? "Email é obrigatório"
+        : !isValidEmail(email)
+          ? "Email inválido"
+          : ""
+      : "",
+    company: touched.company && !company.trim() ? "Empresa é obrigatória" : "",
   };
 
   const handleApplyCoupon = async () => {
@@ -202,52 +223,76 @@ export default function CheckoutPage() {
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Informações de Contato</h3>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">Nome Completo</label>
+                    <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
+                      Nome Completo <span className="text-red-500">*</span>
+                    </label>
                     <Input
                       id="name"
                       type="text"
                       placeholder="Seu nome completo"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full"
+                      onBlur={() => handleBlur("name")}
+                      className={`w-full ${fieldErrors.name ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
+                    {fieldErrors.name && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
+                    )}
                   </div>
 
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">Telefone</label>
+                    <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">
+                      Telefone <span className="text-red-500">*</span>
+                    </label>
                     <Input
                       id="phone"
                       type="tel"
                       placeholder="(00) 00000-0000"
                       value={phone}
                       onChange={(e) => setPhone(maskPhone(e.target.value))}
+                      onBlur={() => handleBlur("phone")}
                       maxLength={15}
-                      className="w-full"
+                      className={`w-full ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
+                    {fieldErrors.phone && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.phone}</p>
+                    )}
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                    <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                      Email <span className="text-red-500">*</span>
+                    </label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="seu@email.com"
                       value={email}
                       onChange={(e) => handleEmailChange(e.target.value)}
-                      className="w-full"
+                      onBlur={() => handleBlur("email")}
+                      className={`w-full ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
+                    {fieldErrors.email && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
+                    )}
                   </div>
 
                   <div>
-                    <label htmlFor="company" className="block text-sm font-medium text-slate-700 mb-2">Sua Empresa</label>
+                    <label htmlFor="company" className="block text-sm font-medium text-slate-700 mb-2">
+                      Empresa <span className="text-red-500">*</span>
+                    </label>
                     <Input
                       id="company"
                       type="text"
-                      placeholder="Nome da sua empresa"
+                      placeholder="Nome da sua empresa ou Empresa que você é colaborador"
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
-                      className="w-full"
+                      onBlur={() => handleBlur("company")}
+                      className={`w-full ${fieldErrors.company ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
+                    {fieldErrors.company && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.company}</p>
+                    )}
                   </div>
 
                   <div>
@@ -358,7 +403,7 @@ export default function CheckoutPage() {
 
                 <Button
                   onClick={handleProceedToPayment}
-                  disabled={!name || !phone || !email || !company || !cpfCnpj}
+                  disabled={!name.trim() || !phone.trim() || !email.trim() || !isValidEmail(email) || !company.trim() || !cpfCnpj}
                   className="w-full bg-[#D4AF37] hover:bg-[#121242]/70 text-[#121242] hover:text-white font-medium py-6 cursor-pointer"
                 >
                   {finalPrice === 0 ? "Confirmar Inscrição" : "Ir para Pagamento"}
