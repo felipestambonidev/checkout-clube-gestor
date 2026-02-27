@@ -20,7 +20,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus, Users, Tag, Calendar } from "lucide-react";
 
@@ -56,6 +55,7 @@ export default function AdminPage() {
   const [newCode, setNewCode] = useState("");
   const [newDiscount, setNewDiscount] = useState("100");
   const [newMaxUses, setNewMaxUses] = useState("10");
+  const [usersDialogOpen, setUsersDialogOpen] = useState(false);
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem("admin_authenticated");
@@ -366,6 +366,98 @@ export default function AdminPage() {
           </CardContent>
         </Card>
 
+        {/* Users Dialog - fora do map */}
+        <Dialog open={usersDialogOpen} onOpenChange={setUsersDialogOpen}>
+          <DialogContent className="max-w-4xl w-[95vw] max-h-[85vh] overflow-hidden flex flex-col">
+            {selectedCoupon && (
+              <>
+                <DialogHeader className="shrink-0">
+                  <DialogTitle className="text-[#121242] text-xl">
+                    Usuários que usaram o cupom:{" "}
+                    <span className="text-[#C0992E] font-bold">
+                      {selectedCoupon.code}
+                    </span>
+                  </DialogTitle>
+                  <p className="text-sm text-slate-500">
+                    {selectedCoupon.usedBy.length}{" "}
+                    {selectedCoupon.usedBy.length === 1
+                      ? "pessoa utilizou"
+                      : "pessoas utilizaram"}{" "}
+                    este cupom
+                  </p>
+                </DialogHeader>
+
+                <div className="flex-1 overflow-y-auto rounded-md border border-slate-200 min-h-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader className="bg-slate-50 sticky top-0 z-10">
+                        <TableRow>
+                          <TableHead className="whitespace-nowrap font-semibold text-[#121242]">
+                            Nome
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap font-semibold text-[#121242]">
+                            Telefone
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap font-semibold text-[#121242]">
+                            Email
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap font-semibold text-[#121242]">
+                            Empresa
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap font-semibold text-[#121242]">
+                            CPF/CNPJ
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap text-right font-semibold text-[#121242]">
+                            Usado em
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedCoupon.usedBy.length > 0 ? (
+                          selectedCoupon.usedBy.map((user, index) => (
+                            <TableRow
+                              key={`${user.email}-${index}`}
+                              className="hover:bg-slate-50/80 transition-colors"
+                            >
+                              <TableCell className="font-medium whitespace-nowrap">
+                                {user.name}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap text-slate-600">
+                                {user.phone}
+                              </TableCell>
+                              <TableCell className="text-slate-600">
+                                {user.email}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap text-slate-600">
+                                {user.company || "-"}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap text-slate-600">
+                                {user.cpfCnpj}
+                              </TableCell>
+                              <TableCell className="text-right text-sm text-slate-500 whitespace-nowrap">
+                                {formatDate(user.usedAt)}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell
+                              colSpan={6}
+                              className="text-center py-8 text-slate-500"
+                            >
+                              Nenhum uso registrado para este cupom.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Coupons Table */}
         <Card className="border-slate-200">
           <CardContent>
@@ -413,97 +505,17 @@ export default function AdminPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setSelectedCoupon(coupon)}
-                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              >
-                                Ver Usuários
-                              </Button>
-                            </DialogTrigger>
-                            {/* ... dentro do map de cupons ... */}
-                            <DialogContent className="max-w-4xl w-[95vw] overflow-hidden flex flex-col">
-                              {selectedCoupon && (
-                                <div className="flex flex-col h-full">
-                                  <DialogHeader className="mb-4">
-                                    <DialogTitle className="text-[#121242] text-xl">
-                                      Usuários que usaram o cupom:{" "}
-                                      <span className="text-[#C0992E] font-bold">
-                                        {selectedCoupon.code}
-                                      </span>
-                                    </DialogTitle>
-                                  </DialogHeader>
-
-                                  {/* Wrapper para permitir scroll horizontal na tabela */}
-                                  <div className="rounded-md border border-slate-200 overflow-x-auto">
-                                    <Table>
-                                      <TableHeader className="bg-slate-50">
-                                        <TableRow>
-                                          <TableHead className="whitespace-nowrap">
-                                            Nome
-                                          </TableHead>
-                                          <TableHead className="whitespace-nowrap">
-                                            Telefone
-                                          </TableHead>
-                                          <TableHead className="whitespace-nowrap">
-                                            Email
-                                          </TableHead>
-                                          <TableHead className="whitespace-nowrap">
-                                            Empresa
-                                          </TableHead>
-                                          <TableHead className="whitespace-nowrap">
-                                            CPF/CNPJ
-                                          </TableHead>
-                                          <TableHead className="whitespace-nowrap text-right">
-                                            Usado em
-                                          </TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {selectedCoupon.usedBy.length > 0 ? (
-                                          selectedCoupon.usedBy.map((user) => (
-                                            <TableRow key={user.email}>
-                                              <TableCell className="font-medium whitespace-nowrap">
-                                                {user.name}
-                                              </TableCell>
-                                              <TableCell className="whitespace-nowrap">
-                                                {user.phone}
-                                              </TableCell>
-                                              <TableCell>
-                                                {user.email}
-                                              </TableCell>
-                                              <TableCell className="whitespace-nowrap">
-                                                {user.company || "-"}
-                                              </TableCell>
-                                              <TableCell className="whitespace-nowrap">
-                                                {user.cpfCnpj}
-                                              </TableCell>
-                                              <TableCell className="text-right text-sm text-slate-600 whitespace-nowrap">
-                                                {formatDate(user.usedAt)}
-                                              </TableCell>
-                                            </TableRow>
-                                          ))
-                                        ) : (
-                                          <TableRow>
-                                            <TableCell
-                                              colSpan={6}
-                                              className="text-center py-4 text-slate-500"
-                                            >
-                                              Nenhum uso registrado para este
-                                              cupom.
-                                            </TableCell>
-                                          </TableRow>
-                                        )}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                </div>
-                              )}
-                            </DialogContent>
-                          </Dialog>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCoupon(coupon);
+                              setUsersDialogOpen(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            Ver Usuários
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
