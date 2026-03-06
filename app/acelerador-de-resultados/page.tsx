@@ -25,7 +25,7 @@ export default function AceleradorDeResultadosPage() {
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const coursePrice = 2997.00;
+  const coursePrice = 948.72;
   const finalPrice = appliedCoupon
     ? coursePrice * (1 - appliedCoupon.discount / 100)
     : coursePrice;
