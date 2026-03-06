@@ -1,0 +1,420 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, Tag, AlertCircle, ExternalLink } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+export default function AceleradorDeResultadosPage() {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
+  const [cpfCnpj, setCpfCnpj] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discount: number;
+  } | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const coursePrice = 948.72;
+  const finalPrice = appliedCoupon
+    ? coursePrice * (1 - appliedCoupon.discount / 100)
+    : coursePrice;
+
+  // --- FUNÇÕES DE MÁSCARA ---
+  const maskPhone = (value: string) => {
+    return value
+      .replace(/\D/g, "")
+      .replace(/(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{5})(\d)/, "$1-$2")
+      .replace(/(-\d{4})\d+?$/, "$1");
+  };
+
+  const maskCpfCnpj = (value: string) => {
+    const rawValue = value.replace(/\D/g, "");
+    if (rawValue.length <= 11) {
+      return rawValue
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    } else {
+      return rawValue
+        .replace(/^(\d{2})(\d)/, "$1.$2")
+        .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+        .replace(/\.(\d{3})(\d)/, ".$1/$2")
+        .replace(/(\d{4})(\d)/, "$1-$2")
+        .replace(/(-\d{2})\d+?$/, "$1");
+    }
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value.trim().toLowerCase());
+  };
+
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const isValidEmail = (value: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  const fieldErrors = {
+    name: touched.name && !name.trim() ? "Nome Completo é obrigatório" : "",
+    phone: touched.phone && !phone.trim() ? "Telefone é obrigatório" : "",
+    email: touched.email
+      ? !email.trim()
+        ? "Email é obrigatório"
+        : !isValidEmail(email)
+          ? "Email inválido"
+          : ""
+      : "",
+    company: touched.company && !company.trim() ? "Empresa é obrigatória" : "",
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!name || !phone || !email || !company || !cpfCnpj) {
+      setError("Por favor, preencha todos os campos de contato primeiro");
+      return;
+    }
+
+    if (!couponCode) {
+      setError("Por favor, insira um código de cupom");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/validate-coupon-acelerador", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: couponCode,
+          name,
+          phone,
+          email,
+          company,
+          cpfCnpj,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao validar cupom");
+        setAppliedCoupon(null);
+      } else {
+        setAppliedCoupon({
+          code: data.code,
+          discount: data.discount,
+        });
+        setError("");
+      }
+    } catch (err) {
+      setError("Erro ao conectar com o servidor");
+      setAppliedCoupon(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProceedToPayment = async () => {
+    // Enviar dados para o webhook do n8n via API route (evita CORS)
+    try {
+      const webhookData = {
+        name,
+        phone,
+        email,
+        company,
+        cpfCnpj,
+        couponCode: appliedCoupon?.code || "",
+        finalPrice,
+        event: "acelerador-de-resultados",
+        timestamp: new Date().toISOString(),
+      };
+      
+      const response = await fetch("/api/send-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(webhookData),
+      });
+
+      if (!response.ok) {
+        console.error("[v0] Error sending webhook:", await response.text());
+      }
+    } catch (error) {
+      console.error("[v0] Error sending to webhook:", error);
+    }
+
+    // Se o valor for 0, redireciona para página de agradecimento
+    if (finalPrice === 0) {
+      sessionStorage.setItem("registration_confirmed", "true");
+      router.push("/obrigado");
+      return;
+    }
+
+    // Se houver valor, redireciona para pagamento
+    const paymentLink = "https://www.asaas.com/c/odfjkhnshezee7wc";
+    window.open(paymentLink, "_blank");
+  };
+
+  return (
+    <div className="min-h-screen bg-[#121242]">
+      <div className="flex flex-col items-center text-center pt-10">
+        <Image
+          src="/logo-clube-gestor.png"
+          alt="Clube Gestor"
+          width={280}
+          height={130}
+          className="h-12 md:h-20 w-auto"
+          priority
+        />
+      </div>
+
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-[#D4AF37] mb-2">
+            Imersão Acelerador de Resultados
+          </h1>
+          <p className="text-white max-w-3xl mx-auto">
+            Edição exclusiva com a presença de Ernesto Haberkorn e Brena Novelli, reunindo empresários que querem estruturar liderança, vendas, cultura e indicadores com método.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Course Info Card */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex gap-4">
+                  <img
+                    src="/course-image.jpg"
+                    alt="Imersão Acelerador de Resultados"
+                    className="w-24 h-24 rounded-lg object-cover"
+                  />
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-slate-900 mb-2">
+                      Imersão Acelerador de Resultados
+                    </h2>
+                    <p className="text-slate-600 text-sm mb-3">
+                      3 dias de imersão com Ernesto Haberkorn e Brena Novelli para estruturar liderança, vendas, cultura e indicadores.
+                    </p>
+                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                      1 Entrada Inteira
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Contact Info */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Informações de Contato</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
+                      Nome Completo <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      onBlur={() => handleBlur("name")}
+                      className={`w-full ${fieldErrors.name ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                    />
+                    {fieldErrors.name && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">
+                      Telefone <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(00) 00000-0000"
+                      value={phone}
+                      onChange={(e) => setPhone(maskPhone(e.target.value))}
+                      onBlur={() => handleBlur("phone")}
+                      maxLength={15}
+                      className={`w-full ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                    />
+                    {fieldErrors.phone && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.phone}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => handleEmailChange(e.target.value)}
+                      onBlur={() => handleBlur("email")}
+                      className={`w-full ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                    />
+                    {fieldErrors.email && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="company" className="block text-sm font-medium text-slate-700 mb-2">
+                      Empresa <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      id="company"
+                      type="text"
+                      placeholder="Nome da sua empresa ou Empresa que você é colaborador"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                      onBlur={() => handleBlur("company")}
+                      className={`w-full ${fieldErrors.company ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                    />
+                    {fieldErrors.company && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.company}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="cpfCnpj" className="block text-sm font-medium text-slate-700 mb-2">CPF ou CNPJ</label>
+                    <Input
+                      id="cpfCnpj"
+                      type="text"
+                      placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                      value={cpfCnpj}
+                      onChange={(e) => setCpfCnpj(maskCpfCnpj(e.target.value))}
+                      maxLength={18}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Coupon Section */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Tag className="w-5 h-5 text-slate-600" />
+                  <h3 className="text-lg font-semibold text-slate-900">Cupom de Desconto</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Digite o código do cupom"
+                      value={couponCode}
+                      onChange={(e) => {
+                        setCouponCode(e.target.value.toUpperCase());
+                        setError("");
+                      }}
+                      disabled={!!appliedCoupon}
+                      className="flex-1 uppercase"
+                    />
+                    <Button
+                      onClick={handleApplyCoupon}
+                      disabled={loading || !!appliedCoupon}
+                      className="bg-[#D4AF37] hover:bg-[#D4AF37]/50 text-[#121242] cursor-pointer"
+                    >
+                      {loading ? "Validando..." : "Aplicar"}
+                    </Button>
+                  </div>
+
+                  {error && (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                      <p className="text-sm text-red-700">{error}</p>
+                    </div>
+                  )}
+
+                  {appliedCoupon && (
+                    <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <p className="text-sm text-emerald-700">
+                        Cupom <strong>{appliedCoupon.code}</strong> aplicado com sucesso! {appliedCoupon.discount}% de desconto
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar - Summary */}
+          <div className="lg:col-span-1">
+            <Card className="border-slate-200 shadow-sm sticky top-8">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Resumo do Pedido</h3>
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">15, 16 e 17 de Abril de 2026</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-900 uppercase font-bold">Ingresso</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">1 Entrada Inteira</span>
+                    <span className="text-slate-900 font-medium">R$ {coursePrice.toFixed(2)}</span>
+                  </div>
+
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-sm pt-2 border-t border-slate-200">
+                      <span className="text-emerald-600 font-medium">Desconto ({appliedCoupon.discount}%)</span>
+                      <span className="text-emerald-600 font-medium">
+                        -R$ {((coursePrice * appliedCoupon.discount) / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-slate-200 mb-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold text-slate-900">Total</span>
+                    <span className="text-2xl font-bold text-slate-900">R$ {finalPrice.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {finalPrice === 0 && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700 text-center">
+                      Clique no botão, para criar o usuário no MemberKit e receba o login e senha no seu e-mail!
+                    </p>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleProceedToPayment}
+                  disabled={!name.trim() || !phone.trim() || !email.trim() || !isValidEmail(email) || !company.trim() || !cpfCnpj}
+                  className="w-full bg-[#D4AF37] hover:bg-[#121242]/70 text-[#121242] hover:text-white font-medium py-6 cursor-pointer"
+                >
+                  {finalPrice === 0 ? "Confirmar Inscrição" : "Ir para Pagamento"}
+                  {finalPrice > 0 && <ExternalLink className="w-4 h-4 ml-2" />}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
