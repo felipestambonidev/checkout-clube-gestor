@@ -164,7 +164,10 @@ export default function AceleradorDeResultadosPage() {
     }
 
     // Se houver valor, redireciona para pagamento
-    const paymentLink = "https://www.asaas.com/c/odfjkhnshezee7wc";
+    // Link diferente dependendo se usou cupom ou não
+    const paymentLink = appliedCoupon
+      ? "https://www.asaas.com/c/odfjkhnshezee7wc"  // Com cupom
+      : "https://www.asaas.com/c/ei638rxgto4bnuhb"; // Sem cupom
     window.open(paymentLink, "_blank");
   };
 
