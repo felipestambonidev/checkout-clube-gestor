@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PutCommand, ScanCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, ScanCommand, DeleteCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME, PARTITION_KEY } from "@/lib/dynamodb";
 
 // Criar novo cupom para Acelerador de Resultados
@@ -102,6 +102,67 @@ export async function DELETE(request: Request) {
     console.error("[v0] Error deleting acelerador coupon:", error);
     return NextResponse.json(
       { error: "Erro ao excluir cupom" },
+      { status: 500 }
+    );
+  }
+}
+
+// Remover usuário de um cupom do Acelerador
+export async function PATCH(request: Request) {
+  try {
+    const { code, userEmail } = await request.json();
+
+    if (!code || !userEmail) {
+      return NextResponse.json(
+        { error: "Código do cupom e email do usuário são obrigatórios" },
+        { status: 400 }
+      );
+    }
+
+    // Buscar o cupom atual
+    const getCommand = new GetCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        [PARTITION_KEY]: `ACELERADOR#${code.toUpperCase()}`,
+      },
+    });
+
+    const { Item } = await docClient.send(getCommand);
+
+    if (!Item) {
+      return NextResponse.json(
+        { error: "Cupom não encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Filtrar o usuário da lista usedBy
+    const updatedUsedBy = (Item.usedBy || []).filter(
+      (user: { email: string }) => user.email !== userEmail
+    );
+
+    // Atualizar o cupom
+    const updateCommand = new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        [PARTITION_KEY]: `ACELERADOR#${code.toUpperCase()}`,
+      },
+      UpdateExpression: "SET usedBy = :usedBy",
+      ExpressionAttributeValues: {
+        ":usedBy": updatedUsedBy,
+      },
+    });
+
+    await docClient.send(updateCommand);
+
+    return NextResponse.json({
+      success: true,
+      message: "Usuário removido com sucesso",
+    });
+  } catch (error) {
+    console.error("[v0] Error removing user from acelerador coupon:", error);
+    return NextResponse.json(
+      { error: "Erro ao remover usuário do cupom" },
       { status: 500 }
     );
   }
