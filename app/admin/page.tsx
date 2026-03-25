@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Users, Tag, Calendar, Rocket } from "lucide-react";
+import { Plus, Users, Tag, Calendar, Rocket, Trash2 } from "lucide-react";
 
 interface Coupon {
   code: string;
@@ -70,6 +70,9 @@ export default function AdminPage() {
   const [newCodeAcelerador, setNewCodeAcelerador] = useState("");
   const [newDiscountAcelerador, setNewDiscountAcelerador] = useState("100");
   const [newMaxUsesAcelerador, setNewMaxUsesAcelerador] = useState("10");
+
+  // State for removing user
+  const [removingUser, setRemovingUser] = useState<string | null>(null);
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem("admin_authenticated");
@@ -238,6 +241,51 @@ export default function AdminPage() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const handleRemoveUser = async (couponCode: string, userEmail: string) => {
+    if (!confirm(`Tem certeza que deseja remover este usuário do cupom ${couponCode}?`)) {
+      return;
+    }
+
+    setRemovingUser(userEmail);
+
+    try {
+      // Determinar qual API usar baseado no tipo de cupom
+      const isAcelerador = aceleradorCoupons.some(c => c.code === couponCode);
+      const apiUrl = isAcelerador ? "/api/admin/coupons-acelerador" : "/api/admin/coupons";
+
+      const response = await fetch(apiUrl, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponCode, userEmail }),
+      });
+
+      if (response.ok) {
+        // Atualizar a lista local removendo o usuário
+        if (selectedCoupon) {
+          const updatedUsedBy = selectedCoupon.usedBy.filter(
+            (user) => user.email !== userEmail
+          );
+          setSelectedCoupon({
+            ...selectedCoupon,
+            usedBy: updatedUsedBy,
+            usedCount: updatedUsedBy.length,
+          });
+        }
+
+        // Recarregar os cupons para manter sincronizado
+        if (isAcelerador) {
+          loadAceleradorCoupons();
+        } else {
+          loadCoupons();
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Error removing user:", error);
+    } finally {
+      setRemovingUser(null);
+    }
   };
 
   if (!isAuthenticated) {
@@ -632,8 +680,11 @@ export default function AdminPage() {
                           <TableHead className="whitespace-nowrap font-semibold text-[#121242]">
                             CPF/CNPJ
                           </TableHead>
-                          <TableHead className="whitespace-nowrap text-right font-semibold text-[#121242]">
+                          <TableHead className="whitespace-nowrap font-semibold text-[#121242]">
                             Usado em
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap text-center font-semibold text-[#121242]">
+                            Ações
                           </TableHead>
                         </TableRow>
                       </TableHeader>
@@ -659,15 +710,30 @@ export default function AdminPage() {
                               <TableCell className="whitespace-nowrap text-slate-600">
                                 {user.cpfCnpj}
                               </TableCell>
-                              <TableCell className="text-right text-sm text-slate-500 whitespace-nowrap">
+                              <TableCell className="text-sm text-slate-500 whitespace-nowrap">
                                 {formatDate(user.usedAt)}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRemoveUser(selectedCoupon.code, user.email)}
+                                  disabled={removingUser === user.email}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                >
+                                  {removingUser === user.email ? (
+                                    "Removendo..."
+                                  ) : (
+                                    <Trash2 className="w-4 h-4" />
+                                  )}
+                                </Button>
                               </TableCell>
                             </TableRow>
                           ))
                         ) : (
                           <TableRow>
                             <TableCell
-                              colSpan={6}
+                              colSpan={7}
                               className="text-center py-8 text-slate-500"
                             >
                               Nenhum uso registrado para este cupom.
