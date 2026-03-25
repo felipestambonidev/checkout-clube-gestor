@@ -20,6 +20,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Plus, Users, Tag, Calendar, Rocket, Trash2 } from "lucide-react";
 
@@ -73,6 +75,8 @@ export default function AdminPage() {
 
   // State for removing user
   const [removingUser, setRemovingUser] = useState<string | null>(null);
+  const [confirmRemoveDialogOpen, setConfirmRemoveDialogOpen] = useState(false);
+  const [userToRemove, setUserToRemove] = useState<{ couponCode: string; userEmail: string; userName: string } | null>(null);
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem("admin_authenticated");
@@ -243,11 +247,15 @@ export default function AdminPage() {
     });
   };
 
-  const handleRemoveUser = async (couponCode: string, userEmail: string) => {
-    if (!confirm(`Tem certeza que deseja remover este usuário do cupom ${couponCode}?`)) {
-      return;
-    }
+  const openRemoveConfirmation = (couponCode: string, userEmail: string, userName: string) => {
+    setUserToRemove({ couponCode, userEmail, userName });
+    setConfirmRemoveDialogOpen(true);
+  };
 
+  const handleRemoveUser = async () => {
+    if (!userToRemove) return;
+
+    const { couponCode, userEmail } = userToRemove;
     setRemovingUser(userEmail);
 
     try {
@@ -285,6 +293,8 @@ export default function AdminPage() {
       console.error("[v0] Error removing user:", error);
     } finally {
       setRemovingUser(null);
+      setConfirmRemoveDialogOpen(false);
+      setUserToRemove(null);
     }
   };
 
@@ -717,15 +727,11 @@ export default function AdminPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleRemoveUser(selectedCoupon.code, user.email)}
+                                  onClick={() => openRemoveConfirmation(selectedCoupon.code, user.email, user.name)}
                                   disabled={removingUser === user.email}
                                   className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                                 >
-                                  {removingUser === user.email ? (
-                                    "Removendo..."
-                                  ) : (
-                                    <Trash2 className="w-4 h-4" />
-                                  )}
+                                  <Trash2 className="w-4 h-4" />
                                 </Button>
                               </TableCell>
                             </TableRow>
@@ -904,6 +910,38 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Modal de Confirmação de Remoção */}
+        <Dialog open={confirmRemoveDialogOpen} onOpenChange={setConfirmRemoveDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-[#121242]">Confirmar Remoção</DialogTitle>
+              <DialogDescription className="text-slate-600">
+                Tem certeza que deseja remover <span className="font-semibold text-[#121242]">{userToRemove?.userName}</span> do cupom <span className="font-semibold text-[#D4AF37]">#{userToRemove?.couponCode}</span>?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setConfirmRemoveDialogOpen(false);
+                  setUserToRemove(null);
+                }}
+                disabled={removingUser !== null}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleRemoveUser}
+                disabled={removingUser !== null}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {removingUser !== null ? "Removendo..." : "Remover"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
