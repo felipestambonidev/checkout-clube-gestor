@@ -81,11 +81,6 @@ export default function CheckoutPage() {
   };
 
   const handleApplyCoupon = async () => {
-    if (!name || !phone || !email || !company || !cpfCnpj) {
-      setError("Por favor, preencha todos os campos de contato primeiro");
-      return;
-    }
-
     if (!couponCode) {
       setError("Por favor, insira um código de cupom");
       return;
@@ -100,11 +95,7 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: couponCode,
-          name,
-          phone,
-          email,
-          company,
-          cpfCnpj,
+          email: email || undefined, // Verificar se já usou, se email preenchido
         }),
       });
 
@@ -153,6 +144,54 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       console.error("[v0] Error sending to webhook:", error);
+    }
+
+    // Se usou cupom, registrar o uso do cupom
+    if (appliedCoupon) {
+      try {
+        const registerResponse = await fetch("/api/register-coupon-use", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: appliedCoupon.code,
+            name,
+            phone,
+            email,
+            company,
+            cpfCnpj,
+            event: "workshop",
+          }),
+        });
+
+        if (!registerResponse.ok) {
+          console.error("[v0] Error registering coupon use:", await registerResponse.text());
+        }
+      } catch (error) {
+        console.error("[v0] Error registering coupon use:", error);
+      }
+    } else {
+      // Sem cupom, registrar o checkout
+      try {
+        const registerResponse = await fetch("/api/register-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            phone,
+            email,
+            company,
+            cpfCnpj,
+            event: "workshop",
+            finalPrice,
+          }),
+        });
+
+        if (!registerResponse.ok) {
+          console.error("[v0] Error registering checkout:", await registerResponse.text());
+        }
+      } catch (error) {
+        console.error("[v0] Error registering checkout:", error);
+      }
     }
 
     // Se o valor for 0, redireciona para página de agradecimento

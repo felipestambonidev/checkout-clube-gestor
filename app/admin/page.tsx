@@ -23,7 +23,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Users, Tag, Calendar, Rocket, Trash2 } from "lucide-react";
+import { Plus, Users, Tag, Calendar, Rocket, Trash2, UserPlus } from "lucide-react";
 
 interface Coupon {
   code: string;
@@ -41,6 +41,18 @@ interface Coupon {
   createdAt: string;
 }
 
+interface Checkout {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  company: string;
+  cpfCnpj: string;
+  event: string;
+  finalPrice: number;
+  createdAt: string;
+}
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
@@ -49,7 +61,7 @@ export default function AdminPage() {
   const [loggingIn, setLoggingIn] = useState(false);
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<"workshop" | "acelerador">("workshop");
+  const [activeTab, setActiveTab] = useState<"workshop" | "acelerador" | "checkouts">("workshop");
 
   // Workshop coupons
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -61,6 +73,10 @@ export default function AdminPage() {
   const [aceleradorCoupons, setAceleradorCoupons] = useState<Coupon[]>([]);
   const [loadingAcelerador, setLoadingAcelerador] = useState(true);
   const [creatingAcelerador, setCreatingAcelerador] = useState(false);
+
+  // Checkouts sem cupom
+  const [checkouts, setCheckouts] = useState<Checkout[]>([]);
+  const [loadingCheckouts, setLoadingCheckouts] = useState(true);
 
   // Form states for Workshop
   const [newCode, setNewCode] = useState("");
@@ -84,9 +100,11 @@ export default function AdminPage() {
       setIsAuthenticated(true);
       loadCoupons();
       loadAceleradorCoupons();
+      loadCheckouts();
     } else {
       setLoading(false);
       setLoadingAcelerador(false);
+      setLoadingCheckouts(false);
     }
   }, []);
 
@@ -107,6 +125,7 @@ export default function AdminPage() {
         setIsAuthenticated(true);
         loadCoupons();
         loadAceleradorCoupons();
+        loadCheckouts();
       } else {
         setAuthError("Usuário ou senha incorretos");
       }
@@ -138,6 +157,38 @@ export default function AdminPage() {
       console.error("[v0] Error loading acelerador coupons:", error);
     } finally {
       setLoadingAcelerador(false);
+    }
+  };
+
+  const loadCheckouts = async () => {
+    try {
+      const response = await fetch("/api/register-checkout");
+      const data = await response.json();
+      setCheckouts(data.checkouts || []);
+    } catch (error) {
+      console.error("[v0] Error loading checkouts:", error);
+    } finally {
+      setLoadingCheckouts(false);
+    }
+  };
+
+  const handleDeleteCheckout = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir este cadastro?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/register-checkout", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+
+      if (response.ok) {
+        loadCheckouts();
+      }
+    } catch (error) {
+      console.error("[v0] Error deleting checkout:", error);
     }
   };
 
@@ -410,6 +461,17 @@ export default function AdminPage() {
           >
             <Rocket className="w-4 h-4 mr-2" />
             Acelerador de Resultados
+          </Button>
+          <Button
+            onClick={() => setActiveTab("checkouts")}
+            className={`px-6 py-3 font-medium cursor-pointer ${
+              activeTab === "checkouts"
+                ? "bg-[#C0992E] text-[#121242]"
+                : "bg-white/10 text-white hover:bg-white/20"
+            }`}
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Cadastros sem Cupom
           </Button>
         </div>
 
@@ -909,6 +971,126 @@ export default function AdminPage() {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {/* Checkouts sem Cupom Tab */}
+        {activeTab === "checkouts" && (
+          <>
+            {/* Stats Cards - Checkouts */}
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <Card className="border-slate-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-[#C0992E]/30 flex items-center justify-center">
+                      <UserPlus className="w-6 h-6 text-[#C0992E]" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-[#121242]">Total de Cadastros</p>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {checkouts.length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-slate-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-[#C0992E]/30 flex items-center justify-center">
+                      <Tag className="w-6 h-6 text-[#C0992E]" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-[#121242]">Workshop</p>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {checkouts.filter((c) => c.event === "workshop").length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-slate-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-[#C0992E]/30 flex items-center justify-center">
+                      <Rocket className="w-6 h-6 text-[#C0992E]" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-[#121242]">Acelerador</p>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {checkouts.filter((c) => c.event === "acelerador-de-resultados").length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Checkouts Table */}
+            <Card className="border-slate-200">
+              <CardContent>
+                {loadingCheckouts ? (
+                  <p className="text-center text-slate-600">Carregando...</p>
+                ) : checkouts.length === 0 ? (
+                  <p className="text-center text-slate-600 py-8">Nenhum cadastro sem cupom encontrado.</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Telefone</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Empresa</TableHead>
+                        <TableHead>CPF/CNPJ</TableHead>
+                        <TableHead>Evento</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {checkouts.map((checkout) => (
+                        <TableRow key={checkout.id}>
+                          <TableCell className="font-medium">{checkout.name}</TableCell>
+                          <TableCell>{checkout.phone}</TableCell>
+                          <TableCell>{checkout.email}</TableCell>
+                          <TableCell>{checkout.company}</TableCell>
+                          <TableCell>{checkout.cpfCnpj}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="secondary"
+                              className={
+                                checkout.event === "workshop"
+                                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                                  : "bg-purple-50 text-purple-700 border-purple-200"
+                              }
+                            >
+                              {checkout.event === "workshop" ? "Workshop" : "Acelerador"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>R$ {checkout.finalPrice.toFixed(2)}</TableCell>
+                          <TableCell className="text-sm text-slate-600">
+                            {formatDate(checkout.createdAt)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteCheckout(checkout.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              Excluir
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </>
         )}
 
         {/* Modal de Confirmação de Remoção */}

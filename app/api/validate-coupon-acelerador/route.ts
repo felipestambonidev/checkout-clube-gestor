@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME, PARTITION_KEY } from "@/lib/dynamodb";
 
 export async function POST(request: Request) {
   try {
-    const { code, name, phone, email, company, cpfCnpj } = await request.json();
+    const { code, email } = await request.json();
 
-    if (!code || !name || !phone || !email || !company || !cpfCnpj) {
+    if (!code) {
       return NextResponse.json(
-        { error: "Todos os campos são obrigatórios" },
+        { error: "Código do cupom é obrigatório" },
         { status: 400 }
       );
     }
@@ -41,41 +41,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar se este email já usou o cupom
-    const usedBy = Item.usedBy || [];
-    const alreadyUsed = usedBy.some((user: any) => user.email === email);
+    // Verificar se este email já usou o cupom (se email fornecido)
+    if (email) {
+      const usedBy = Item.usedBy || [];
+      const alreadyUsed = usedBy.some((user: any) => user.email === email);
 
-    if (alreadyUsed) {
-      return NextResponse.json(
-        { error: "Você já utilizou este cupom" },
-        { status: 400 }
-      );
+      if (alreadyUsed) {
+        return NextResponse.json(
+          { error: "Você já utilizou este cupom" },
+          { status: 400 }
+        );
+      }
     }
 
-    // Adicionar novo uso
-    const newUser = {
-      name,
-      phone,
-      email,
-      company,
-      cpfCnpj,
-      usedAt: new Date().toISOString(),
-    };
-
-    const updateCommand = new UpdateCommand({
-      TableName: TABLE_NAME,
-      Key: {
-        [PARTITION_KEY]: `ACELERADOR#${code.toUpperCase()}`,
-      },
-      UpdateExpression: "SET usedBy = list_append(if_not_exists(usedBy, :empty_list), :new_user)",
-      ExpressionAttributeValues: {
-        ":empty_list": [],
-        ":new_user": [newUser],
-      },
-    });
-
-    await docClient.send(updateCommand);
-
+    // Apenas validar - NÃO salva o uso ainda
     return NextResponse.json({
       success: true,
       discount: Item.discount,
