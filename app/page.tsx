@@ -202,7 +202,7 @@ export default function CheckoutPage() {
     }
 
     // Se houver valor, redireciona para pagamento
-    const paymentLink = "https://www.asaas.com/c/odfjkhnshezee7wc";
+    const paymentLink = "https://www.asaas.com/c/tl38qi5ahownfrht";
     window.open(paymentLink, "_blank");
   };
 
