@@ -243,7 +243,7 @@ export default function CheckoutPage() {
                   />
                   <div className="flex-1">
                     <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                      Workshop de Aceleração | Gestão do Tempo
+                      Workshop de Aceleração
                     </h2>
                     <p className="text-slate-600 text-sm mb-3">
                       Curso completo com carga horária de 3 horas, ministrado por especialistas do Clube Gestor.
@@ -405,7 +405,7 @@ export default function CheckoutPage() {
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Resumo do Pedido</h3>
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Quarta-Feira, 04 de Março · 09:00 às 12:00</span>
+                    <span className="text-slate-600">Quarta-Feira, 13 de Maio · 09:00 às 12:00</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-900 uppercase font-bold">Ingresso</span>
