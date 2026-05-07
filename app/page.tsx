@@ -25,7 +25,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const coursePrice = 474.90;
+  const coursePrice = 228.00;
   const finalPrice = appliedCoupon
     ? coursePrice * (1 - appliedCoupon.discount / 100)
     : coursePrice;
