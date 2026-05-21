@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Home } from "lucide-react";
+import { CheckCircle2, Home, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -22,7 +22,7 @@ export default function ThankYouPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#121242] via-[#1a1a5e] to-[#121242]">
+    <div className="min-h-screen bg-linear-to-br from-[#121242] via-[#1a1a5e] to-[#121242]">
       {/* Logo */}
       <div className="flex flex-col items-center text-center pt-10">
         <Image
@@ -53,7 +53,7 @@ export default function ThankYouPage() {
               Parabéns! Sua inscrição foi realizada com sucesso.
             </p>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
               <p className="text-slate-700 mb-2">
                 <strong>Próximos passos:</strong>
               </p>
@@ -62,6 +62,20 @@ export default function ThankYouPage() {
                 ao <strong>MemberKit</strong>. Verifique sua caixa de entrada e
                 também a pasta de spam.
               </p>
+            </div>
+
+            {/* Chamada para o WhatsApp */}
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6 mb-8">
+              <p className="text-slate-700 mb-4">
+                <strong>Importante:</strong> Entre no nosso grupo VIP do WhatsApp para receber todos os avisos e informações exclusivas!
+              </p>
+              <Button
+                onClick={() => window.open("https://chat.whatsapp.com/CNbZflFMltH8NrKAAOiKzD", "_blank")}
+                className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-medium py-6 text-base"
+              >
+                <MessageCircle className="w-5 h-5 mr-2" />
+                Entrar no Grupo do WhatsApp
+              </Button>
             </div>
 
             <div className="space-y-4">
