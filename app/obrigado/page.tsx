@@ -10,13 +10,12 @@ import { useRouter } from "next/navigation";
 export default function ThankYouPage() {
   const router = useRouter();
 
-  // Verificar se o usuário tem permissão para acessar esta página
+
   React.useEffect(() => {
     const isConfirmed = sessionStorage.getItem("registration_confirmed");
     if (!isConfirmed) {
       router.push("/");
     } else {
-      // Remover o token após verificação para evitar reutilização
       sessionStorage.removeItem("registration_confirmed");
     }
   }, [router]);
@@ -35,7 +34,7 @@ export default function ThankYouPage() {
         />
       </div>
 
-      {/* Thank You Content */}
+    
       <div className="container mx-auto px-4 py-12 max-w-2xl">
         <Card className="border-slate-200 shadow-2xl">
           <CardContent className="p-8 md:p-12 text-center">
