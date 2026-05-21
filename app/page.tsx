@@ -405,7 +405,7 @@ export default function CheckoutPage() {
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Resumo do Pedido</h3>
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Quarta-Feira, 13 de Maio · 09:00 às 12:00</span>
+                    <span className="text-slate-600">Quarta-Feira, 10 de Junho · 09:00 às 12:00</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-900 uppercase font-bold">Ingresso</span>
