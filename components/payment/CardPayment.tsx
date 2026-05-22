@@ -18,8 +18,7 @@ export default function CardPayment({
   const [cardData, setCardData] = useState({
     holderName: '',
     number: '',
-    expiryMonth: '',
-    expiryYear: '',
+    expiry: '',
     ccv: '',
   });
 
@@ -42,10 +41,18 @@ export default function CardPayment({
 
   const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, '');
-    if (value.length >= 2) {
-      value = value.slice(0, 2) + '/' + value.slice(2, 4);
+    
+    // Limita a 4 digitos (MMAA)
+    if (value.length > 4) {
+      value = value.slice(0, 4);
     }
-    setCardData(prev => ({ ...prev, expiryMonth: value.slice(0, 2), expiryYear: value.slice(3, 5) }));
+    
+    // Formata como MM/AA
+    if (value.length >= 2) {
+      value = value.slice(0, 2) + '/' + value.slice(2);
+    }
+    
+    setCardData(prev => ({ ...prev, expiry: value }));
     setError('');
   };
 
@@ -69,8 +76,16 @@ export default function CardPayment({
       return false;
     }
 
-    if (!cardData.expiryMonth || !cardData.expiryYear) {
-      setError('Data de validade inválida');
+    // Validar formato MM/AA
+    const expiryParts = cardData.expiry.split('/');
+    if (expiryParts.length !== 2 || expiryParts[0].length !== 2 || expiryParts[1].length !== 2) {
+      setError('Data de validade inválida (use MM/AA)');
+      return false;
+    }
+
+    const month = parseInt(expiryParts[0], 10);
+    if (month < 1 || month > 12) {
+      setError('Mês de validade inválido');
       return false;
     }
 
@@ -97,6 +112,11 @@ export default function CardPayment({
       tomorrow.setDate(tomorrow.getDate() + 1);
       const dueDate = tomorrow.toISOString().split('T')[0];
 
+      // Extrair mês e ano da validade
+      const expiryParts = cardData.expiry.split('/');
+      const expiryMonth = expiryParts[0];
+      const expiryYear = expiryParts[1];
+
       const response = await fetch('/api/asaas/charge-card', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,8 +128,8 @@ export default function CardPayment({
           creditCard: {
             holderName: cardData.holderName,
             number: cardData.number.replace(/\s/g, ''),
-            expiryMonth: cardData.expiryMonth,
-            expiryYear: cardData.expiryYear,
+            expiryMonth,
+            expiryYear,
             ccv: cardData.ccv,
           },
         }),
@@ -183,11 +203,7 @@ export default function CardPayment({
           <input
             id="expiry"
             type="text"
-            value={
-              cardData.expiryMonth && cardData.expiryYear
-                ? `${cardData.expiryMonth}/${cardData.expiryYear}`
-                : ''
-            }
+            value={cardData.expiry}
             onChange={handleExpiryChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={processing || isLoading}

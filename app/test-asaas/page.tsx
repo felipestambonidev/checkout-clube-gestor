@@ -59,7 +59,7 @@ export default function TestAsaasPage() {
       });
     }
 
-    // Test 2: Criar cliente de teste (usando CPF válido de teste)
+    // Test 2: Criar cliente de teste (sem telefone para evitar erro de validação)
     try {
       const response = await fetch('/api/asaas/create-customer', {
         method: 'POST',
@@ -68,7 +68,6 @@ export default function TestAsaasPage() {
           name: 'Cliente Teste v0',
           email: `teste${Date.now()}@example.com`,
           cpfCnpj: '24971563792',
-          phone: '11999999999',
           address: 'Avenida Paulista',
           addressNumber: '1000',
           province: 'Bela Vista',
