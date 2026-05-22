@@ -23,7 +23,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Users, Tag, Calendar, Rocket, Trash2, UserPlus } from "lucide-react";
+import { Plus, Users, Tag, Calendar, Rocket, Trash2, UserPlus, Settings, CheckCircle2 } from "lucide-react";
 
 interface Coupon {
   code: string;
@@ -61,7 +61,16 @@ export default function AdminPage() {
   const [loggingIn, setLoggingIn] = useState(false);
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<"workshop" | "acelerador" | "checkouts">("workshop");
+  const [activeTab, setActiveTab] = useState<"workshop" | "acelerador" | "checkouts" | "config">("workshop");
+
+  // Checkout config state
+  const [configAmount, setConfigAmount] = useState("228.00");
+  const [configProductType, setConfigProductType] = useState<"Turma" | "Assinatura">("Turma");
+  const [configProductId, setConfigProductId] = useState("");
+  const [configDescription, setConfigDescription] = useState("");
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [configSaved, setConfigSaved] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(false);
 
   // Workshop coupons
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -101,6 +110,7 @@ export default function AdminPage() {
       loadCoupons();
       loadAceleradorCoupons();
       loadCheckouts();
+      loadConfig();
     } else {
       setLoading(false);
       setLoadingAcelerador(false);
@@ -126,6 +136,7 @@ export default function AdminPage() {
         loadCoupons();
         loadAceleradorCoupons();
         loadCheckouts();
+        loadConfig();
       } else {
         setAuthError("Usuário ou senha incorretos");
       }
@@ -285,6 +296,51 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("[v0] Error deleting acelerador coupon:", error);
+    }
+  };
+
+  const loadConfig = async () => {
+    setLoadingConfig(true);
+    try {
+      const response = await fetch("/api/admin/checkout-config");
+      const data = await response.json();
+      if (data.config) {
+        setConfigAmount(String(data.config.amount));
+        setConfigProductType(data.config.productType || "Turma");
+        setConfigProductId(data.config.productId || "");
+        setConfigDescription(data.config.description || "");
+      }
+    } catch (error) {
+      console.error("[v0] Error loading config:", error);
+    } finally {
+      setLoadingConfig(false);
+    }
+  };
+
+  const handleSaveConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingConfig(true);
+    setConfigSaved(false);
+    try {
+      const response = await fetch("/api/admin/checkout-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: Number(configAmount),
+          productType: configProductType,
+          productId: configProductId,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setConfigDescription(data.config.description);
+        setConfigSaved(true);
+        setTimeout(() => setConfigSaved(false), 3000);
+      }
+    } catch (error) {
+      console.error("[v0] Error saving config:", error);
+    } finally {
+      setSavingConfig(false);
     }
   };
 
@@ -472,6 +528,17 @@ export default function AdminPage() {
           >
             <UserPlus className="w-4 h-4 mr-2" />
             Cadastros sem Cupom
+          </Button>
+          <Button
+            onClick={() => setActiveTab("config")}
+            className={`px-6 py-3 font-medium cursor-pointer ${
+              activeTab === "config"
+                ? "bg-[#C0992E] text-[#121242]"
+                : "bg-white/10 text-white hover:bg-white/20"
+            }`}
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Configurar Checkout
           </Button>
         </div>
 
