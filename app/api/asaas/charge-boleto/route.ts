@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findOrCreateCustomer, HolderInfo } from '@/lib/asaas-utils';
+import { findOrCreateCustomer, HolderInfo, safeJsonParse } from '@/lib/asaas-utils';
 
 interface ChargeBoletoData {
   customerId?: string;
@@ -95,27 +95,37 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(paymentPayload),
     });
 
-    const result = await response.json();
+    const { data: result, error: parseError } = await safeJsonParse(response);
 
     console.log('[ASAAS BOLETO] Resposta da API:', response.status, JSON.stringify(result, null, 2));
 
+    if (parseError) {
+      console.error('[ASAAS BOLETO] Erro ao parsear resposta:', parseError);
+      return NextResponse.json(
+        { error: parseError },
+        { status: response.status || 500 }
+      );
+    }
+
+    const paymentResult = result as { id: string; status: string; bankSlipUrl?: string; identificationField?: string; errors?: Array<{ description?: string; detail?: string }>; message?: string };
+
     if (!response.ok) {
       console.error('[ASAAS BOLETO] Erro ao criar boleto:', JSON.stringify(result, null, 2));
-      const errorMessage = result.errors?.[0]?.description || result.errors?.[0]?.detail || result.message || 'Erro ao criar boleto';
+      const errorMessage = paymentResult.errors?.[0]?.description || paymentResult.errors?.[0]?.detail || paymentResult.message || 'Erro ao criar boleto';
       return NextResponse.json(
         { error: errorMessage, details: result },
         { status: response.status }
       );
     }
 
-    console.log('[ASAAS BOLETO] Boleto criado com sucesso:', result.id);
+    console.log('[ASAAS BOLETO] Boleto criado com sucesso:', paymentResult.id);
 
     return NextResponse.json({
-      paymentId: result.id,
+      paymentId: paymentResult.id,
       customerId: customerId,
-      status: result.status,
-      boletoUrl: result.bankSlipUrl,
-      barcodeNumber: result.identificationField,
+      status: paymentResult.status,
+      boletoUrl: paymentResult.bankSlipUrl,
+      barcodeNumber: paymentResult.identificationField,
     });
   } catch (error) {
     console.error('[ASAAS BOLETO] Erro inesperado:', error);
