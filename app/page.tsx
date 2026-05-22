@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,8 +26,20 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showAsaasCheckout, setShowAsaasCheckout] = useState(false);
+  
+  // Configuracoes carregadas do localStorage (definidas pelo admin)
+  const [customPrice, setCustomPrice] = useState(228.00);
+  const [paymentDescription, setPaymentDescription] = useState("357603 Turma");
 
-  const coursePrice = 228.00;
+  // Carregar configuracoes do admin do localStorage
+  useEffect(() => {
+    const savedPrice = localStorage.getItem("checkout_price");
+    const savedDescription = localStorage.getItem("checkout_description");
+    if (savedPrice) setCustomPrice(parseFloat(savedPrice) || 228.00);
+    if (savedDescription) setPaymentDescription(savedDescription);
+  }, []);
+
+  const coursePrice = customPrice;
   const finalPrice = appliedCoupon
     ? coursePrice * (1 - appliedCoupon.discount / 100)
     : coursePrice;
@@ -244,7 +256,7 @@ export default function CheckoutPage() {
           </div>
 
           <div className="bg-white rounded-lg p-8">
-            <AsaasCheckout amount={finalPrice} />
+            <AsaasCheckout amount={finalPrice} description={paymentDescription} />
           </div>
         </div>
       </div>
@@ -276,8 +288,8 @@ export default function CheckoutPage() {
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            
-            {/* NOVO/RESTALRADO: Course Info Card */}
+
+            {/* Course Info Card */}
             <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-6">
                 <div className="flex gap-4">
