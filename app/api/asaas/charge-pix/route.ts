@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findOrCreateCustomer, getCustomerData, HolderInfo } from '@/lib/asaas-utils';
+import { findOrCreateCustomer, getCustomerData, HolderInfo, safeJsonParse } from '@/lib/asaas-utils';
 
 interface ChargePixData {
   customerId?: string;
@@ -95,13 +95,23 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(paymentPayload),
     });
 
-    const result = await response.json();
+    const { data: result, error: parseError } = await safeJsonParse(response);
 
     console.log('[ASAAS PIX] Resposta da API:', response.status, JSON.stringify(result, null, 2));
 
+    if (parseError) {
+      console.error('[ASAAS PIX] Erro ao parsear resposta:', parseError);
+      return NextResponse.json(
+        { error: parseError },
+        { status: response.status || 500 }
+      );
+    }
+
+    const paymentResult = result as { id: string; status: string; errors?: Array<{ description?: string; detail?: string }>; message?: string };
+
     if (!response.ok) {
       console.error('[ASAAS PIX] Erro ao criar PIX:', JSON.stringify(result, null, 2));
-      const errorMessage = result.errors?.[0]?.description || result.errors?.[0]?.detail || result.message || 'Erro ao criar PIX';
+      const errorMessage = paymentResult.errors?.[0]?.description || paymentResult.errors?.[0]?.detail || paymentResult.message || 'Erro ao criar PIX';
       return NextResponse.json(
         { error: errorMessage, details: result },
         { status: response.status }
@@ -109,9 +119,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Gerar QR Code para o PIX
-    console.log('[ASAAS PIX] Buscando QR Code para pagamento:', result.id);
+    console.log('[ASAAS PIX] Buscando QR Code para pagamento:', paymentResult.id);
     const qrCodeResponse = await fetch(
-      `${apiUrl}/payments/${result.id}/pixQrCode`,
+      `${apiUrl}/payments/${paymentResult.id}/pixQrCode`,
       {
         method: 'GET',
         headers: {
@@ -122,20 +132,22 @@ export async function POST(request: NextRequest) {
 
     let qrCodeUrl = '';
     let pixCopyPaste = '';
-    if (qrCodeResponse.ok) {
-      const qrCodeData = await qrCodeResponse.json();
-      qrCodeUrl = qrCodeData.encodedImage ? `data:image/png;base64,${qrCodeData.encodedImage}` : '';
-      pixCopyPaste = qrCodeData.payload || '';
+    
+    const { data: qrCodeData, error: qrParseError } = await safeJsonParse(qrCodeResponse);
+    
+    if (qrCodeResponse.ok && !qrParseError && qrCodeData) {
+      const qrData = qrCodeData as { encodedImage?: string; payload?: string };
+      qrCodeUrl = qrData.encodedImage ? `data:image/png;base64,${qrData.encodedImage}` : '';
+      pixCopyPaste = qrData.payload || '';
       console.log('[ASAAS PIX] QR Code gerado com sucesso');
     } else {
-      const qrCodeError = await qrCodeResponse.json();
-      console.error('[ASAAS PIX] Erro ao gerar QR Code:', JSON.stringify(qrCodeError, null, 2));
+      console.error('[ASAAS PIX] Erro ao gerar QR Code:', qrParseError || JSON.stringify(qrCodeData, null, 2));
     }
 
     return NextResponse.json({
-      paymentId: result.id,
+      paymentId: paymentResult.id,
       customerId: customerId,
-      status: result.status,
+      status: paymentResult.status,
       pixKey: pixCopyPaste,
       qrCodeUrl,
     });

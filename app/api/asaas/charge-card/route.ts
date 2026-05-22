@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findOrCreateCustomer, getCustomerData, HolderInfo } from '@/lib/asaas-utils';
+import { findOrCreateCustomer, getCustomerData, HolderInfo, safeJsonParse } from '@/lib/asaas-utils';
 
 interface ChargeCardData {
   customerId?: string;
@@ -129,26 +129,36 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(paymentPayload),
     });
 
-    const result = await response.json();
+    const { data: result, error: parseError } = await safeJsonParse(response);
 
     console.log('[ASAAS CARD] Resposta da API:', response.status, JSON.stringify(result, null, 2));
+
+    if (parseError) {
+      console.error('[ASAAS CARD] Erro ao parsear resposta:', parseError);
+      return NextResponse.json(
+        { error: parseError },
+        { status: response.status || 500 }
+      );
+    }
+
+    const paymentResult = result as { id: string; status: string; errors?: Array<{ description?: string; detail?: string }>; message?: string };
 
     if (!response.ok) {
       console.error('[ASAAS CARD] Erro ao processar cartao:', JSON.stringify(result, null, 2));
       const errorMessage =
-        result.errors?.[0]?.description ||
-        result.errors?.[0]?.detail ||
-        result.message ||
+        paymentResult.errors?.[0]?.description ||
+        paymentResult.errors?.[0]?.detail ||
+        paymentResult.message ||
         'Erro ao processar cartao';
       return NextResponse.json({ error: errorMessage, details: result }, { status: response.status });
     }
 
-    console.log('[ASAAS CARD] Pagamento processado:', result.id, result.status);
+    console.log('[ASAAS CARD] Pagamento processado:', paymentResult.id, paymentResult.status);
 
     return NextResponse.json({
-      paymentId: result.id,
+      paymentId: paymentResult.id,
       customerId: customerId,
-      status: result.status,
+      status: paymentResult.status,
     });
   } catch (error) {
     console.error('[ASAAS CARD] Erro inesperado:', error);

@@ -1,5 +1,28 @@
 // Utilitários compartilhados para APIs do ASAAS
 
+// Funcao auxiliar para fazer parse seguro de JSON
+export async function safeJsonParse(response: Response): Promise<{ data: unknown; error?: string }> {
+  const text = await response.text();
+  
+  if (!text || text.trim() === '') {
+    return { 
+      data: null, 
+      error: `Resposta vazia do servidor (status: ${response.status})` 
+    };
+  }
+  
+  try {
+    const data = JSON.parse(text);
+    return { data };
+  } catch {
+    console.error('[ASAAS] Resposta nao e JSON valido:', text.substring(0, 500));
+    return { 
+      data: null, 
+      error: `Resposta invalida do servidor: ${text.substring(0, 200)}` 
+    };
+  }
+}
+
 export interface HolderInfo {
   name: string;
   email: string;
@@ -36,15 +59,18 @@ export async function findOrCreateCustomer(
 
     console.log('[ASAAS UTILS] Resposta busca cliente:', searchResponse.status);
 
-    if (searchResponse.ok) {
-      const searchResult = await searchResponse.json();
-      if (searchResult.data && searchResult.data.length > 0) {
-        console.log('[ASAAS UTILS] Cliente encontrado:', searchResult.data[0].id);
-        return { customerId: searchResult.data[0].id };
+    const { data: searchResult, error: parseError } = await safeJsonParse(searchResponse);
+    
+    if (parseError) {
+      console.error('[ASAAS UTILS] Erro ao parsear resposta:', parseError);
+    } else if (searchResponse.ok && searchResult) {
+      const result = searchResult as { data?: Array<{ id: string }> };
+      if (result.data && result.data.length > 0) {
+        console.log('[ASAAS UTILS] Cliente encontrado:', result.data[0].id);
+        return { customerId: result.data[0].id };
       }
-    } else {
-      const errorResult = await searchResponse.json();
-      console.error('[ASAAS UTILS] Erro ao buscar cliente:', JSON.stringify(errorResult, null, 2));
+    } else if (!searchResponse.ok) {
+      console.error('[ASAAS UTILS] Erro ao buscar cliente:', JSON.stringify(searchResult, null, 2));
     }
   } catch (err) {
     console.error('[ASAAS UTILS] Erro ao buscar cliente:', err);
@@ -90,21 +116,31 @@ export async function findOrCreateCustomer(
     body: JSON.stringify(customerPayload),
   });
 
-  const createResult = await createResponse.json();
+  const { data: createResult, error: parseError } = await safeJsonParse(createResponse);
 
   console.log('[ASAAS UTILS] Resposta criar cliente:', createResponse.status, JSON.stringify(createResult, null, 2));
 
+  if (parseError) {
+    console.error('[ASAAS UTILS] Erro ao parsear resposta:', parseError);
+    return {
+      customerId: '',
+      error: parseError,
+    };
+  }
+
   if (!createResponse.ok) {
+    const result = createResult as { errors?: Array<{ description?: string }>; message?: string };
     console.error('[ASAAS UTILS] Erro ao criar cliente:', JSON.stringify(createResult, null, 2));
-    const errorMessage = createResult.errors?.[0]?.description || createResult.message || 'Erro ao cadastrar cliente';
+    const errorMessage = result?.errors?.[0]?.description || result?.message || 'Erro ao cadastrar cliente';
     return {
       customerId: '',
       error: errorMessage,
     };
   }
 
-  console.log('[ASAAS UTILS] Cliente criado:', createResult.id);
-  return { customerId: createResult.id };
+  const result = createResult as { id: string };
+  console.log('[ASAAS UTILS] Cliente criado:', result.id);
+  return { customerId: result.id };
 }
 
 export async function getCustomerData(
