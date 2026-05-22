@@ -11,7 +11,21 @@ interface ChargeCardData {
     expiryYear: string;
     ccv: string;
   };
-  billingType: 'CREDIT_CARD';
+  // Dados do titular para creditCardHolderInfo (obrigatório no ASAAS)
+  holderInfo?: {
+    name: string;
+    email: string;
+    cpfCnpj: string;
+    phone?: string;
+    address: string;
+    addressNumber: string;
+    complement?: string;
+    province: string;
+    city?: string;
+    state?: string;
+    postalCode: string;
+  };
+  billingType?: 'CREDIT_CARD';
   dueDate: string;
   remoteId?: string;
 }
@@ -44,6 +58,44 @@ export async function POST(request: NextRequest) {
     // Remover espaços e caracteres especiais do número do cartão
     const cardNumber = data.creditCard.number.replace(/\s/g, '');
 
+    // Preparar creditCardHolderInfo - obrigatório para cobrança com cartão no ASAAS
+    // Se não tiver holderInfo, buscar dados do cliente
+    let holderInfo = data.holderInfo;
+    
+    if (!holderInfo) {
+      // Buscar dados do cliente no ASAAS
+      const customerResponse = await fetch(`${apiUrl}/customers/${data.customerId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'access_token': apiKey,
+        },
+      });
+      
+      if (customerResponse.ok) {
+        const customer = await customerResponse.json();
+        holderInfo = {
+          name: customer.name,
+          email: customer.email,
+          cpfCnpj: customer.cpfCnpj,
+          phone: customer.phone || customer.mobilePhone,
+          address: customer.address || 'Não informado',
+          addressNumber: customer.addressNumber || 'S/N',
+          province: customer.province || 'Centro',
+          city: customer.city,
+          state: customer.state,
+          postalCode: customer.postalCode,
+        };
+      }
+    }
+
+    if (!holderInfo || !holderInfo.cpfCnpj) {
+      return NextResponse.json(
+        { error: 'Dados do titular do cartão são obrigatórios' },
+        { status: 400 }
+      );
+    }
+
     // Criar cobrança no ASAAS
     const response = await fetch(`${apiUrl}/payments`, {
       method: 'POST',
@@ -66,17 +118,18 @@ export async function POST(request: NextRequest) {
           ccv: data.creditCard.ccv,
         },
         creditCardHolderInfo: {
-          name: data.creditCard.holderName,
-          email: '', // Preenchido pela integração
-          cpfCnpj: '', // Já no cliente
-          phone: '', // Já no cliente
-          mobilePhone: '', // Já no cliente
-          address: '', // Já no cliente
-          addressNumber: '', // Já no cliente
-          province: '', // Já no cliente
-          city: '', // Já no cliente
-          state: '', // Já no cliente
-          postalCode: '', // Já no cliente
+          name: holderInfo.name,
+          email: holderInfo.email,
+          cpfCnpj: holderInfo.cpfCnpj.replace(/\D/g, ''),
+          phone: holderInfo.phone?.replace(/\D/g, '') || '',
+          mobilePhone: holderInfo.phone?.replace(/\D/g, '') || '',
+          address: holderInfo.address,
+          addressNumber: holderInfo.addressNumber,
+          complement: holderInfo.complement || '',
+          province: holderInfo.province,
+          city: holderInfo.city || '',
+          state: holderInfo.state || '',
+          postalCode: holderInfo.postalCode.replace(/\D/g, ''),
         },
       }),
     });
@@ -84,9 +137,12 @@ export async function POST(request: NextRequest) {
     const result = await response.json();
 
     if (!response.ok) {
-      console.error('[ASAAS] Erro ao processar cartão:', result);
+      console.error('[ASAAS] Erro ao processar cartão:', JSON.stringify(result, null, 2));
+      const errorMessage = result.errors?.[0]?.description || 
+                          result.errors?.[0]?.detail || 
+                          'Erro ao processar cartão';
       return NextResponse.json(
-        { error: result.errors?.[0]?.detail || 'Erro ao processar cartão' },
+        { error: errorMessage },
         { status: response.status }
       );
     }
