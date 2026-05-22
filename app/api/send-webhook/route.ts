@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     const couponWebhookUrl = "https://io.fitgestao.com/webhook/bc8b3f2f-6ed1-4820-a9af-8caa62e89e65";
     
     // Webhook para PAGAMENTO (sem cupom) - TESTE
-    const paymentWebhookUrl = "https://io.fitgestao.com/webhook-test/a7f2d898-ed29-458d-93a9-effe55fbf50d";
+    const paymentWebhookUrl = "https://io.fitgestao.com/webhook/a7f2d898-ed29-458d-93a9-effe55fbf50d";
     
     const webhookUrl = hasCoupon ? couponWebhookUrl : paymentWebhookUrl;
     
