@@ -131,6 +131,7 @@ export default function AceleradorDeResultadosPage() {
         couponCode: appliedCoupon?.code || "",
         finalPrice,
         event: "acelerador-de-resultados",
+        description: "Acelerador de Resultados",
         timestamp: new Date().toISOString(),
       };
       
