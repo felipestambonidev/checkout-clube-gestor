@@ -1,13 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
+
+interface HolderInfo {
+  name: string;
+  email: string;
+  cpfCnpj: string;
+  phone?: string;
+  address: string;
+  addressNumber: string;
+  complement?: string;
+  province: string;
+  city?: string;
+  state?: string;
+  postalCode: string;
+}
 
 interface PixPaymentProps {
   amount: number;
   onPaymentSuccess: (paymentId: string) => void;
   isLoading?: boolean;
-  customerId: string;
+  customerId?: string;
+  holderInfo?: HolderInfo;
 }
 
 export default function PixPayment({
@@ -15,6 +30,7 @@ export default function PixPayment({
   onPaymentSuccess,
   isLoading = false,
   customerId,
+  holderInfo,
 }: PixPaymentProps) {
   const [loading, setLoading] = useState(false);
   const [paymentId, setPaymentId] = useState('');
@@ -36,7 +52,8 @@ export default function PixPayment({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customerId,
+          customerId: customerId || undefined,
+          holderInfo: holderInfo || undefined,
           amount,
           description: 'Checkout Clube Gestor',
           dueDate,

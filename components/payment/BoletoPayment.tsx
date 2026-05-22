@@ -2,11 +2,26 @@
 
 import { useState } from 'react';
 
+interface HolderInfo {
+  name: string;
+  email: string;
+  cpfCnpj: string;
+  phone?: string;
+  address: string;
+  addressNumber: string;
+  complement?: string;
+  province: string;
+  city?: string;
+  state?: string;
+  postalCode: string;
+}
+
 interface BoletoPaymentProps {
   amount: number;
   onPaymentSuccess: (paymentId: string) => void;
   isLoading?: boolean;
-  customerId: string;
+  customerId?: string;
+  holderInfo?: HolderInfo;
 }
 
 export default function BoletoPayment({
@@ -14,6 +29,7 @@ export default function BoletoPayment({
   onPaymentSuccess,
   isLoading = false,
   customerId,
+  holderInfo,
 }: BoletoPaymentProps) {
   const [loading, setLoading] = useState(false);
   const [boletoData, setBoletoData] = useState({
@@ -37,7 +53,8 @@ export default function BoletoPayment({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customerId,
+          customerId: customerId || undefined,
+          holderInfo: holderInfo || undefined,
           amount,
           description: 'Checkout Clube Gestor',
           dueDate,

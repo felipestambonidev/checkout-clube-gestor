@@ -31,6 +31,19 @@ export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckout
   const [error, setError] = useState('');
   const [paymentId, setPaymentId] = useState('');
   const [initialData, setInitialData] = useState<Partial<AddressData>>({});
+  const [holderInfo, setHolderInfo] = useState<{
+    name: string;
+    email: string;
+    cpfCnpj: string;
+    phone?: string;
+    address: string;
+    addressNumber: string;
+    complement?: string;
+    province: string;
+    city?: string;
+    state?: string;
+    postalCode: string;
+  } | null>(null);
 
   // Carregar dados do checkout do sessionStorage
   useEffect(() => {
@@ -55,11 +68,11 @@ export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckout
     setError('');
 
     try {
-      // Mapear dados do formulário para o formato da API ASAAS
-      const customerData = {
+      // Mapear dados do formulário para o formato do holderInfo
+      const holderData = {
         name: addressData.name,
         email: addressData.email,
-        cpfCnpj: addressData.cpf, // AddressForm usa 'cpf', API usa 'cpfCnpj'
+        cpfCnpj: addressData.cpf,
         phone: addressData.phone,
         address: addressData.address,
         addressNumber: addressData.addressNumber,
@@ -70,24 +83,30 @@ export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckout
         postalCode: addressData.postalCode,
       };
 
-      // Criar cliente no ASAAS
-      const response = await fetch('/api/asaas/create-customer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(customerData),
-      });
+      // Salvar holderInfo para usar no pagamento
+      setHolderInfo(holderData);
 
-      const result = await response.json();
+      // Tentar criar cliente no ASAAS (opcional, pois o charge-card também pode criar)
+      try {
+        const response = await fetch('/api/asaas/create-customer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(holderData),
+        });
 
-      if (!response.ok) {
-        setError(result.error || 'Erro ao processar informações');
-        return;
+        const result = await response.json();
+
+        if (response.ok && result.customerId) {
+          setCustomerId(result.customerId);
+        }
+      } catch (err) {
+        // Se falhar, o charge-card criará o cliente
+        console.log('[AsaasCheckout] Cliente será criado no pagamento');
       }
 
-      setCustomerId(result.customerId);
       setStep('payment');
     } catch (err) {
-      setError('Erro ao conectar com servidor');
+      setError('Erro ao processar dados');
       console.error('[AsaasCheckout] Erro:', err);
     } finally {
       setLoading(false);
@@ -194,7 +213,8 @@ export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckout
             {paymentMethod === 'card' && (
               <CardPayment
                 amount={amount}
-                customerId={customerId}
+                customerId={customerId || undefined}
+                holderInfo={holderInfo || undefined}
                 onPaymentSuccess={handlePaymentSuccess}
                 isLoading={loading}
               />
@@ -202,7 +222,8 @@ export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckout
             {paymentMethod === 'pix' && (
               <PixPayment
                 amount={amount}
-                customerId={customerId}
+                customerId={customerId || undefined}
+                holderInfo={holderInfo || undefined}
                 onPaymentSuccess={handlePaymentSuccess}
                 isLoading={loading}
               />
@@ -210,7 +231,8 @@ export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckout
             {paymentMethod === 'boleto' && (
               <BoletoPayment
                 amount={amount}
-                customerId={customerId}
+                customerId={customerId || undefined}
+                holderInfo={holderInfo || undefined}
                 onPaymentSuccess={handlePaymentSuccess}
                 isLoading={loading}
               />

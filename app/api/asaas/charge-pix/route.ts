@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { findOrCreateCustomer, getCustomerData, HolderInfo } from '@/lib/asaas-utils';
 
 interface ChargePixData {
-  customerId: string;
+  customerId?: string;
   amount: number;
   description: string;
   dueDate: string;
+  holderInfo?: HolderInfo;
   remoteId?: string;
 }
 
@@ -13,9 +15,17 @@ export async function POST(request: NextRequest) {
     const data: ChargePixData = await request.json();
 
     // Validação
-    if (!data.customerId || !data.amount) {
+    if (!data.amount) {
       return NextResponse.json(
-        { error: 'Cliente e valor são obrigatórios' },
+        { error: 'Valor é obrigatório' },
+        { status: 400 }
+      );
+    }
+
+    // Precisa ter customerId ou holderInfo
+    if (!data.customerId && !data.holderInfo) {
+      return NextResponse.json(
+        { error: 'Informe customerId ou holderInfo com dados do comprador' },
         { status: 400 }
       );
     }
@@ -24,7 +34,28 @@ export async function POST(request: NextRequest) {
     const apiUrl = process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3';
 
     if (!apiKey) {
-      throw new Error('ASAAS_API_KEY não configurada');
+      return NextResponse.json(
+        { error: 'ASAAS_API_KEY não configurada' },
+        { status: 500 }
+      );
+    }
+
+    let customerId = data.customerId;
+
+    // Se não tem customerId, criar/buscar cliente pelo holderInfo
+    if (!customerId && data.holderInfo) {
+      const result = await findOrCreateCustomer(apiUrl, apiKey, data.holderInfo);
+      if (result.error) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+      customerId = result.customerId;
+    }
+
+    if (!customerId) {
+      return NextResponse.json(
+        { error: 'Não foi possível identificar o cliente' },
+        { status: 400 }
+      );
     }
 
     // Criar cobrança PIX no ASAAS
@@ -35,7 +66,7 @@ export async function POST(request: NextRequest) {
         'access_token': apiKey,
       },
       body: JSON.stringify({
-        customer: data.customerId,
+        customer: customerId,
         billingType: 'PIX',
         value: data.amount,
         dueDate: data.dueDate,
@@ -49,14 +80,14 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       console.error('[ASAAS] Erro ao criar PIX:', result);
       return NextResponse.json(
-        { error: result.errors?.[0]?.detail || 'Erro ao criar PIX' },
+        { error: result.errors?.[0]?.description || result.errors?.[0]?.detail || 'Erro ao criar PIX' },
         { status: response.status }
       );
     }
 
     // Gerar QR Code para o PIX
     const qrCodeResponse = await fetch(
-      `${apiUrl}/payments/${result.id}/qrCode/image`,
+      `${apiUrl}/payments/${result.id}/pixQrCode`,
       {
         method: 'GET',
         headers: {
@@ -66,15 +97,18 @@ export async function POST(request: NextRequest) {
     );
 
     let qrCodeUrl = '';
+    let pixCopyPaste = '';
     if (qrCodeResponse.ok) {
       const qrCodeData = await qrCodeResponse.json();
-      qrCodeUrl = qrCodeData.image || '';
+      qrCodeUrl = qrCodeData.encodedImage ? `data:image/png;base64,${qrCodeData.encodedImage}` : '';
+      pixCopyPaste = qrCodeData.payload || '';
     }
 
     return NextResponse.json({
       paymentId: result.id,
+      customerId: customerId,
       status: result.status,
-      pixKey: result.pixQrCode,
+      pixKey: pixCopyPaste,
       qrCodeUrl,
     });
   } catch (error) {
