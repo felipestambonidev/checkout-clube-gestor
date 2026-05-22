@@ -18,6 +18,7 @@ interface HolderInfo {
 
 interface CardPaymentProps {
   amount: number;
+  description?: string;
   onPaymentSuccess: (paymentId: string) => void;
   isLoading?: boolean;
   customerId?: string; // Agora opcional
@@ -26,6 +27,7 @@ interface CardPaymentProps {
 
 export default function CardPayment({
   amount,
+  description = 'Checkout Clube Gestor',
   onPaymentSuccess,
   isLoading = false,
   customerId,
@@ -140,7 +142,7 @@ export default function CardPayment({
           customerId: customerId || undefined,
           holderInfo: holderInfo || undefined,
           amount,
-          description: 'Checkout Clube Gestor',
+          description,
           dueDate,
           creditCard: {
             holderName: cardData.holderName,

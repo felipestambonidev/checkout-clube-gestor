@@ -16,13 +16,14 @@ interface CheckoutData {
 
 interface AsaasCheckoutProps {
   amount: number;
+  description?: string;
   onCouponApplied?: (discountedAmount: number) => void;
 }
 
 type PaymentMethod = 'card' | 'pix' | 'boleto';
 type Step = 'address' | 'payment' | 'success';
 
-export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckoutProps) {
+export default function AsaasCheckout({ amount, description = 'Checkout Clube Gestor', onCouponApplied }: AsaasCheckoutProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>('address');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
@@ -213,6 +214,7 @@ export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckout
             {paymentMethod === 'card' && (
               <CardPayment
                 amount={amount}
+                description={description}
                 customerId={customerId || undefined}
                 holderInfo={holderInfo || undefined}
                 onPaymentSuccess={handlePaymentSuccess}
@@ -222,6 +224,7 @@ export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckout
             {paymentMethod === 'pix' && (
               <PixPayment
                 amount={amount}
+                description={description}
                 customerId={customerId || undefined}
                 holderInfo={holderInfo || undefined}
                 onPaymentSuccess={handlePaymentSuccess}
@@ -231,6 +234,7 @@ export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckout
             {paymentMethod === 'boleto' && (
               <BoletoPayment
                 amount={amount}
+                description={description}
                 customerId={customerId || undefined}
                 holderInfo={holderInfo || undefined}
                 onPaymentSuccess={handlePaymentSuccess}
