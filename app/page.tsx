@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Tag, AlertCircle, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import AsaasCheckout from "@/components/AsaasCheckout";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [showAsaasCheckout, setShowAsaasCheckout] = useState(false);
 
   const coursePrice = 228.00;
   const finalPrice = appliedCoupon
@@ -120,91 +122,134 @@ export default function CheckoutPage() {
   };
 
   const handleProceedToPayment = async () => {
-    // Enviar dados para o webhook do n8n via API route (evita CORS)
-    try {
-      const webhookData = {
-        name,
-        phone,
-        email,
-        company,
-        cpfCnpj,
-        couponCode: appliedCoupon?.code || "",
-        finalPrice,
-        timestamp: new Date().toISOString(),
-      };
-      
-      const response = await fetch("/api/send-webhook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(webhookData),
-      });
-
-      if (!response.ok) {
-        console.error("[v0] Error sending webhook:", await response.text());
-      }
-    } catch (error) {
-      console.error("[v0] Error sending to webhook:", error);
-    }
-
-    // Se usou cupom, registrar o uso do cupom
-    if (appliedCoupon) {
-      try {
-        const registerResponse = await fetch("/api/register-coupon-use", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            code: appliedCoupon.code,
-            name,
-            phone,
-            email,
-            company,
-            cpfCnpj,
-            event: "workshop",
-          }),
-        });
-
-        if (!registerResponse.ok) {
-          console.error("[v0] Error registering coupon use:", await registerResponse.text());
-        }
-      } catch (error) {
-        console.error("[v0] Error registering coupon use:", error);
-      }
-    } else {
-      // Sem cupom, registrar o checkout
-      try {
-        const registerResponse = await fetch("/api/register-checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            phone,
-            email,
-            company,
-            cpfCnpj,
-            event: "workshop",
-            finalPrice,
-          }),
-        });
-
-        if (!registerResponse.ok) {
-          console.error("[v0] Error registering checkout:", await registerResponse.text());
-        }
-      } catch (error) {
-        console.error("[v0] Error registering checkout:", error);
-      }
-    }
-
     // Se o valor for 0, redireciona para página de agradecimento
     if (finalPrice === 0) {
+      // Enviar dados para o webhook do n8n via API route (evita CORS)
+      try {
+        const webhookData = {
+          name,
+          phone,
+          email,
+          company,
+          cpfCnpj,
+          couponCode: appliedCoupon?.code || "",
+          finalPrice,
+          timestamp: new Date().toISOString(),
+        };
+        
+        const response = await fetch("/api/send-webhook", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(webhookData),
+        });
+
+        if (!response.ok) {
+          console.error("[v0] Error sending webhook:", await response.text());
+        }
+      } catch (error) {
+        console.error("[v0] Error sending to webhook:", error);
+      }
+
+      // Se usou cupom, registrar o uso do cupom
+      if (appliedCoupon) {
+        try {
+          const registerResponse = await fetch("/api/register-coupon-use", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              code: appliedCoupon.code,
+              name,
+              phone,
+              email,
+              company,
+              cpfCnpj,
+              event: "workshop",
+            }),
+          });
+
+          if (!registerResponse.ok) {
+            console.error("[v0] Error registering coupon use:", await registerResponse.text());
+          }
+        } catch (error) {
+          console.error("[v0] Error registering coupon use:", error);
+        }
+      } else {
+        // Sem cupom, registrar o checkout
+        try {
+          const registerResponse = await fetch("/api/register-checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name,
+              phone,
+              email,
+              company,
+              cpfCnpj,
+              event: "workshop",
+              finalPrice,
+            }),
+          });
+
+          if (!registerResponse.ok) {
+            console.error("[v0] Error registering checkout:", await registerResponse.text());
+          }
+        } catch (error) {
+          console.error("[v0] Error registering checkout:", error);
+        }
+      }
+
       sessionStorage.setItem("registration_confirmed", "true");
       router.push("/obrigado");
       return;
     }
 
-    // Se houver valor, redireciona para pagamento
-    const paymentLink = "https://www.asaas.com/c/tl38qi5ahownfrht";
-    window.open(paymentLink, "_blank");
+    // Se houver valor, armazena dados e vai para checkout ASAAS
+    sessionStorage.setItem("checkout_data", JSON.stringify({
+      name,
+      phone,
+      email,
+      company,
+      cpfCnpj,
+      couponCode: appliedCoupon?.code || "",
+      finalPrice,
+      timestamp: new Date().toISOString(),
+    }));
+
+    setShowAsaasCheckout(true);
   };
+
+  // Se mostrar checkout ASAAS, renderizar apenas o formulário de pagamento
+  if (showAsaasCheckout) {
+    return (
+      <div className="min-h-screen bg-[#121242]">
+        <div className="flex flex-col items-center text-center pt-10">
+          <Image
+            src="/logo-clube-gestor.png"
+            alt="Clube Gestor"
+            width={280}
+            height={130}
+            className="h-12 md:h-20 w-auto"
+            priority
+          />
+        </div>
+
+        <div className="container mx-auto px-4 py-8 max-w-5xl">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-[#D4AF37] mb-2">
+              Pagamento Seguro
+            </h1>
+            <p className="text-white">
+              Finalize seu pagamento do Workshop de Aceleração
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg p-8">
+            <AsaasCheckout amount={finalPrice} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#121242]">

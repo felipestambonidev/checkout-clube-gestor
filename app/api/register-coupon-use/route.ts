@@ -4,7 +4,7 @@ import { docClient, TABLE_NAME, PARTITION_KEY } from "@/lib/dynamodb";
 
 export async function POST(request: Request) {
   try {
-    const { code, name, phone, email, company, cpfCnpj, event } = await request.json();
+    const { code, name, phone, email, company, cpfCnpj, event, paymentId } = await request.json();
 
     if (!code || !name || !phone || !email || !company || !cpfCnpj) {
       return NextResponse.json(
@@ -62,6 +62,7 @@ export async function POST(request: Request) {
       email,
       company,
       cpfCnpj,
+      paymentId: paymentId || null,
       usedAt: new Date().toISOString(),
     };
 
