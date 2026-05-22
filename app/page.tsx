@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Tag, AlertCircle, ExternalLink, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, Tag, AlertCircle, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import AsaasCheckout from "@/components/AsaasCheckout";
@@ -27,10 +27,17 @@ export default function CheckoutPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showAsaasCheckout, setShowAsaasCheckout] = useState(false);
   
-  // Configurações do Admin (valor e descrição editáveis)
-  const [showAdminConfig, setShowAdminConfig] = useState(false);
+  // Configuracoes carregadas do localStorage (definidas pelo admin)
   const [customPrice, setCustomPrice] = useState(228.00);
   const [paymentDescription, setPaymentDescription] = useState("357603 Turma");
+
+  // Carregar configuracoes do admin do localStorage
+  useEffect(() => {
+    const savedPrice = localStorage.getItem("checkout_price");
+    const savedDescription = localStorage.getItem("checkout_description");
+    if (savedPrice) setCustomPrice(parseFloat(savedPrice) || 228.00);
+    if (savedDescription) setPaymentDescription(savedDescription);
+  }, []);
 
   const coursePrice = customPrice;
   const finalPrice = appliedCoupon
@@ -281,72 +288,8 @@ export default function CheckoutPage() {
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            
-            {/* Painel de Configuração Admin */}
-            <Card className="border-amber-300 bg-amber-50 shadow-sm">
-              <CardContent className="p-4">
-                <button
-                  onClick={() => setShowAdminConfig(!showAdminConfig)}
-                  className="flex items-center justify-between w-full text-left"
-                >
-                  <div className="flex items-center gap-2">
-                    <Settings className="w-5 h-5 text-amber-600" />
-                    <span className="font-semibold text-amber-800">Configuracoes do Pagamento (Admin)</span>
-                  </div>
-                  {showAdminConfig ? (
-                    <ChevronUp className="w-5 h-5 text-amber-600" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-amber-600" />
-                  )}
-                </button>
-                
-                {showAdminConfig && (
-                  <div className="mt-4 space-y-4 pt-4 border-t border-amber-200">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-amber-800 mb-2">
-                          Valor do Pagamento (R$)
-                        </label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={customPrice}
-                          onChange={(e) => setCustomPrice(parseFloat(e.target.value) || 0)}
-                          className="bg-white border-amber-300"
-                          placeholder="228.00"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-amber-800 mb-2">
-                          Descricao do Pagamento
-                        </label>
-                        <Input
-                          type="text"
-                          value={paymentDescription}
-                          onChange={(e) => setPaymentDescription(e.target.value)}
-                          className="bg-white border-amber-300"
-                          placeholder="357603 Turma"
-                        />
-                        <p className="text-xs text-amber-600 mt-1">
-                          Formato: ID + Tipo (ex: 357603 Turma ou 123456 Assinatura)
-                        </p>
-                      </div>
-                    </div>
-                    <div className="p-3 bg-amber-100 rounded-lg">
-                      <p className="text-sm text-amber-800">
-                        <strong>Resumo:</strong> R$ {customPrice.toFixed(2)} - {paymentDescription || "Sem descricao"}
-                      </p>
-                      <p className="text-xs text-amber-600 mt-1">
-                        Essa descricao sera enviada ao ASAAS e recebida pelo n8n para integracao com Memberkit
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* NOVO/RESTALRADO: Course Info Card */}
+            {/* Course Info Card */}
             <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-6">
                 <div className="flex gap-4">
@@ -528,14 +471,6 @@ export default function CheckoutPage() {
                     <span className="text-slate-600">1 Entrada Inteira</span>
                     <span className="text-slate-900 font-medium">R$ {coursePrice.toFixed(2)}</span>
                   </div>
-                  
-                  {/* Mostrar descrição configurada */}
-                  {paymentDescription && (
-                    <div className="flex justify-between text-sm pt-2 border-t border-slate-100">
-                      <span className="text-slate-500">Ref:</span>
-                      <span className="text-amber-600 font-mono text-xs">{paymentDescription}</span>
-                    </div>
-                  )}
 
                   {appliedCoupon && (
                     <div className="flex justify-between text-sm pt-2 border-t border-slate-200">

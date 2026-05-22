@@ -94,6 +94,11 @@ export default function AdminPage() {
   const [confirmRemoveDialogOpen, setConfirmRemoveDialogOpen] = useState(false);
   const [userToRemove, setUserToRemove] = useState<{ couponCode: string; userEmail: string; userName: string } | null>(null);
 
+  // Checkout config states
+  const [checkoutPrice, setCheckoutPrice] = useState("228.00");
+  const [checkoutDescription, setCheckoutDescription] = useState("357603 Turma");
+  const [configSaved, setConfigSaved] = useState(false);
+
   useEffect(() => {
     const authStatus = sessionStorage.getItem("admin_authenticated");
     if (authStatus === "true") {
@@ -101,6 +106,11 @@ export default function AdminPage() {
       loadCoupons();
       loadAceleradorCoupons();
       loadCheckouts();
+      // Load checkout config from localStorage
+      const savedPrice = localStorage.getItem("checkout_price");
+      const savedDescription = localStorage.getItem("checkout_description");
+      if (savedPrice) setCheckoutPrice(savedPrice);
+      if (savedDescription) setCheckoutDescription(savedDescription);
     } else {
       setLoading(false);
       setLoadingAcelerador(false);
@@ -1111,7 +1121,7 @@ export default function AdminPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
-                  Criar Checkout Personalizado
+                  Configurar Checkout de Pagamentos
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1120,28 +1130,81 @@ export default function AdminPage() {
                     <strong>Como funciona:</strong>
                   </p>
                   <ul className="text-sm text-blue-600 list-disc list-inside space-y-1">
-                    <li>Configure o valor e a descrição do pagamento</li>
-                    <li>A descrição deve seguir o formato: <code className="bg-blue-100 px-1 rounded">ID Turma</code> ou <code className="bg-blue-100 px-1 rounded">ID Assinatura</code></li>
-                    <li>Copie o link gerado e envie para o cliente</li>
-                    <li>A descrição será enviada ao ASAAS e recebida pelo n8n para integração com o Memberkit</li>
+                    <li>Configure o valor e a descricao do pagamento abaixo</li>
+                    <li>A descricao deve seguir o formato: <code className="bg-blue-100 px-1 rounded">ID Turma</code> ou <code className="bg-blue-100 px-1 rounded">ID Assinatura</code></li>
+                    <li>Clique em Salvar para aplicar as configuracoes no checkout principal</li>
+                    <li>A descricao sera enviada ao ASAAS e recebida pelo n8n para integracao com o Memberkit</li>
                   </ul>
                 </div>
 
-                <div className="text-center">
-                  <Button
-                    onClick={() => window.open('/checkout-custom', '_blank')}
-                    className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] font-medium px-8 py-6 text-lg cursor-pointer"
-                  >
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Abrir Configurador de Checkout
-                  </Button>
-                  <p className="text-sm text-slate-600 mt-3">
-                    Uma nova aba será aberta com o configurador de checkout
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Valor do Pagamento (R$)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={checkoutPrice}
+                      onChange={(e) => {
+                        setCheckoutPrice(e.target.value);
+                        setConfigSaved(false);
+                      }}
+                      className="bg-white border-slate-300"
+                      placeholder="228.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Descricao do Pagamento (para Memberkit/n8n)
+                    </label>
+                    <Input
+                      type="text"
+                      value={checkoutDescription}
+                      onChange={(e) => {
+                        setCheckoutDescription(e.target.value);
+                        setConfigSaved(false);
+                      }}
+                      className="bg-white border-slate-300"
+                      placeholder="357603 Turma"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Formato: ID + Tipo (ex: 357603 Turma ou 123456 Assinatura)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                  <p className="text-sm text-slate-700">
+                    <strong>Configuracao atual:</strong>
+                  </p>
+                  <p className="text-lg font-semibold text-[#C0992E] mt-1">
+                    R$ {parseFloat(checkoutPrice || "0").toFixed(2)} - {checkoutDescription || "Sem descricao"}
                   </p>
                 </div>
 
+                <div className="flex gap-4">
+                  <Button
+                    onClick={() => {
+                      localStorage.setItem("checkout_price", checkoutPrice);
+                      localStorage.setItem("checkout_description", checkoutDescription);
+                      setConfigSaved(true);
+                      setTimeout(() => setConfigSaved(false), 3000);
+                    }}
+                    className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] font-medium px-8 cursor-pointer"
+                  >
+                    Salvar Configuracoes
+                  </Button>
+                  {configSaved && (
+                    <span className="text-green-600 font-medium flex items-center">
+                      Configuracoes salvas com sucesso!
+                    </span>
+                  )}
+                </div>
+
                 <div className="pt-4 border-t border-slate-200">
-                  <h4 className="font-medium text-slate-900 mb-2">Exemplos de descrição:</h4>
+                  <h4 className="font-medium text-slate-900 mb-2">Exemplos de descricao:</h4>
                   <div className="grid md:grid-cols-2 gap-3">
                     <div className="p-3 bg-slate-50 rounded-lg">
                       <code className="text-sm font-mono text-[#C0992E]">357603 Turma</code>
@@ -1152,6 +1215,20 @@ export default function AdminPage() {
                       <p className="text-xs text-slate-500 mt-1">Para assinaturas recorrentes</p>
                     </div>
                   </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-200">
+                  <p className="text-sm text-slate-600">
+                    <strong>Link do Checkout:</strong>{" "}
+                    <a 
+                      href="/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[#C0992E] hover:underline"
+                    >
+                      Abrir Checkout Principal
+                    </a>
+                  </p>
                 </div>
               </CardContent>
             </Card>
