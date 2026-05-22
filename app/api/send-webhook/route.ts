@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     
     console.log("[v0] Sending data to n8n webhook:", data);
 
-    // Fazer a requisição para o webhook do n8n
+    // Fazer a requisição para o webhook do n8n (produção)
     const webhookUrl = "https://io.fitgestao.com/webhook/bc8b3f2f-6ed1-4820-a9af-8caa62e89e65";
     
     const response = await fetch(webhookUrl, {

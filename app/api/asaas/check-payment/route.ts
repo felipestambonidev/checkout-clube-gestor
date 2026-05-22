@@ -19,8 +19,15 @@ export async function GET(request: NextRequest) {
     const apiKey = process.env.ASAAS_API_KEY;
     const apiUrl = process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3';
 
+    console.log('[ASAAS] Check Payment - API URL:', apiUrl);
+    console.log('[ASAAS] Check Payment - API Key presente:', !!apiKey);
+
     if (!apiKey) {
-      throw new Error('ASAAS_API_KEY não configurada');
+      console.error('[ASAAS] ASAAS_API_KEY não está configurada');
+      return NextResponse.json(
+        { error: 'ASAAS_API_KEY não configurada. Verifique as variáveis de ambiente.' },
+        { status: 500 }
+      );
     }
 
     // Verificar status do pagamento
