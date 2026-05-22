@@ -2,28 +2,58 @@
 
 import { useState } from 'react';
 
+interface ConfigResult {
+  ASAAS_API_KEY: boolean;
+  ASAAS_WEBHOOK_TOKEN: boolean;
+  ASAAS_API_URL: string;
+  apiKeyPreview: string | null;
+}
+
 export default function TestAsaasPage() {
   const [testResults, setTestResults] = useState<Array<{ name: string; success: boolean; message: string }>>([]);
+  const [configData, setConfigData] = useState<ConfigResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   const runTests = async () => {
     setLoading(true);
     const results = [];
 
-    // Test 1: Verificar se variáveis estão configuradas
+    // Test 0: Verificar configuração
     try {
-      const response = await fetch('/api/asaas/check-payment?paymentId=test');
-      const success = response.status !== 500;
+      const configResponse = await fetch('/api/asaas/check-config');
+      const config: ConfigResult = await configResponse.json();
+      setConfigData(config);
+
       results.push({
-        name: 'Variáveis ASAAS Configuradas',
-        success,
-        message: success 
-          ? 'Variáveis parecem estar configuradas' 
-          : 'Erro ao acessar API - verifique ASAAS_API_KEY',
+        name: 'Configuração de Variáveis',
+        success: config.ASAAS_API_KEY && config.ASAAS_WEBHOOK_TOKEN,
+        message: config.ASAAS_API_KEY 
+          ? `API Key: ${config.apiKeyPreview} | Token: ${config.ASAAS_WEBHOOK_TOKEN ? 'OK' : 'Faltando'} | URL: ${config.ASAAS_API_URL}` 
+          : 'ASAAS_API_KEY não configurada nas variáveis de ambiente do Vercel',
       });
     } catch (error) {
       results.push({
-        name: 'Variáveis ASAAS Configuradas',
+        name: 'Configuração de Variáveis',
+        success: false,
+        message: 'Erro ao verificar configuração',
+      });
+    }
+
+    // Test 1: Verificar se variáveis estão configuradas (usando API real)
+    try {
+      const response = await fetch('/api/asaas/check-payment?paymentId=test');
+      const data = await response.json();
+      const success = response.status !== 500;
+      results.push({
+        name: 'Acesso à API ASAAS',
+        success,
+        message: success 
+          ? 'API acessível (pagamento não encontrado é esperado)' 
+          : `Erro: ${data.error || 'Verifique ASAAS_API_KEY'}`,
+      });
+    } catch (error) {
+      results.push({
+        name: 'Acesso à API ASAAS',
         success: false,
         message: 'Erro ao conectar com API',
       });
