@@ -5,20 +5,96 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Home, MessageCircle } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ThankYouPage() {
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+  const paymentId = searchParams.get("paymentId");
+  const [sent, setSent] = React.useState(false);
 
   React.useEffect(() => {
-    const isConfirmed = sessionStorage.getItem("registration_confirmed");
-    if (!isConfirmed) {
-      router.push("/");
-    } else {
-      sessionStorage.removeItem("registration_confirmed");
-    }
-  }, [router]);
+    const sendCheckoutData = async () => {
+      if (sent) return;
+
+      try {
+        // Buscar dados do checkout do sessionStorage
+        const checkoutDataStr = sessionStorage.getItem("checkout_data");
+        const isConfirmed = sessionStorage.getItem("registration_confirmed");
+
+        if (!isConfirmed && !checkoutDataStr && !paymentId) {
+          router.push("/");
+          return;
+        }
+
+        if (checkoutDataStr) {
+          const checkoutData = JSON.parse(checkoutDataStr);
+
+          // Enviar dados para o webhook do n8n
+          const webhookData = {
+            ...checkoutData,
+            paymentId: paymentId || null,
+            source: "asaas_payment_success",
+          };
+
+          const response = await fetch("/api/send-webhook", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(webhookData),
+          });
+
+          if (!response.ok) {
+            console.error("[v0] Error sending webhook:", await response.text());
+          }
+
+          // Registrar o uso do cupom ou o checkout
+          if (checkoutData.couponCode) {
+            await fetch("/api/register-coupon-use", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                code: checkoutData.couponCode,
+                name: checkoutData.name,
+                phone: checkoutData.phone,
+                email: checkoutData.email,
+                company: checkoutData.company,
+                cpfCnpj: checkoutData.cpfCnpj,
+                event: "workshop",
+                paymentId: paymentId || null,
+              }),
+            });
+          } else {
+            await fetch("/api/register-checkout", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                name: checkoutData.name,
+                phone: checkoutData.phone,
+                email: checkoutData.email,
+                company: checkoutData.company,
+                cpfCnpj: checkoutData.cpfCnpj,
+                event: "workshop",
+                finalPrice: checkoutData.finalPrice,
+                paymentId: paymentId || null,
+              }),
+            });
+          }
+
+          sessionStorage.removeItem("checkout_data");
+        }
+
+        if (isConfirmed) {
+          sessionStorage.removeItem("registration_confirmed");
+        }
+
+        setSent(true);
+      } catch (error) {
+        console.error("[v0] Error sending data:", error);
+      }
+    };
+
+    sendCheckoutData();
+  }, [router, paymentId, sent]);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-[#121242] via-[#1a1a5e] to-[#121242]">
@@ -62,6 +138,14 @@ export default function ThankYouPage() {
                 também a pasta de spam.
               </p>
             </div>
+
+            {paymentId && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <p className="text-xs text-green-800">
+                  <strong>ID do Pagamento:</strong> {paymentId}
+                </p>
+              </div>
+            )}
 
             {/* Chamada para o WhatsApp */}
             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6 mb-8">
