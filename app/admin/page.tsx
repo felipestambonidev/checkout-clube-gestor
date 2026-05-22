@@ -23,7 +23,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Users, Tag, Calendar, Rocket, Trash2, UserPlus } from "lucide-react";
+import { Plus, Users, Tag, Calendar, Rocket, Trash2, UserPlus, CreditCard } from "lucide-react";
 
 interface Coupon {
   code: string;
@@ -61,7 +61,7 @@ export default function AdminPage() {
   const [loggingIn, setLoggingIn] = useState(false);
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<"workshop" | "acelerador" | "checkouts">("workshop");
+  const [activeTab, setActiveTab] = useState<"workshop" | "acelerador" | "checkouts" | "checkout-custom">("workshop");
 
   // Workshop coupons
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -439,7 +439,7 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8">
+        <div className="flex flex-wrap gap-2 mb-8">
           <Button
             onClick={() => setActiveTab("workshop")}
             className={`px-6 py-3 font-medium cursor-pointer ${
@@ -472,6 +472,17 @@ export default function AdminPage() {
           >
             <UserPlus className="w-4 h-4 mr-2" />
             Cadastros sem Cupom
+          </Button>
+          <Button
+            onClick={() => setActiveTab("checkout-custom")}
+            className={`px-6 py-3 font-medium cursor-pointer ${
+              activeTab === "checkout-custom"
+                ? "bg-[#C0992E] text-[#121242]"
+                : "bg-white/10 text-white hover:bg-white/20"
+            }`}
+          >
+            <CreditCard className="w-4 h-4 mr-2" />
+            Checkout Personalizado
           </Button>
         </div>
 
@@ -1088,6 +1099,60 @@ export default function AdminPage() {
                     </TableBody>
                   </Table>
                 )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {/* Checkout Personalizado Tab */}
+        {activeTab === "checkout-custom" && (
+          <>
+            <Card className="border-slate-200 mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Criar Checkout Personalizado
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700 mb-2">
+                    <strong>Como funciona:</strong>
+                  </p>
+                  <ul className="text-sm text-blue-600 list-disc list-inside space-y-1">
+                    <li>Configure o valor e a descrição do pagamento</li>
+                    <li>A descrição deve seguir o formato: <code className="bg-blue-100 px-1 rounded">ID Turma</code> ou <code className="bg-blue-100 px-1 rounded">ID Assinatura</code></li>
+                    <li>Copie o link gerado e envie para o cliente</li>
+                    <li>A descrição será enviada ao ASAAS e recebida pelo n8n para integração com o Memberkit</li>
+                  </ul>
+                </div>
+
+                <div className="text-center">
+                  <Button
+                    onClick={() => window.open('/checkout-custom', '_blank')}
+                    className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] font-medium px-8 py-6 text-lg cursor-pointer"
+                  >
+                    <CreditCard className="w-5 h-5 mr-2" />
+                    Abrir Configurador de Checkout
+                  </Button>
+                  <p className="text-sm text-slate-600 mt-3">
+                    Uma nova aba será aberta com o configurador de checkout
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-slate-200">
+                  <h4 className="font-medium text-slate-900 mb-2">Exemplos de descrição:</h4>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div className="p-3 bg-slate-50 rounded-lg">
+                      <code className="text-sm font-mono text-[#C0992E]">357603 Turma</code>
+                      <p className="text-xs text-slate-500 mt-1">Para turmas/cursos</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-lg">
+                      <code className="text-sm font-mono text-[#C0992E]">123456 Assinatura</code>
+                      <p className="text-xs text-slate-500 mt-1">Para assinaturas recorrentes</p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </>

@@ -18,6 +18,7 @@ interface HolderInfo {
 
 interface BoletoPaymentProps {
   amount: number;
+  description?: string;
   onPaymentSuccess: (paymentId: string) => void;
   isLoading?: boolean;
   customerId?: string;
@@ -26,6 +27,7 @@ interface BoletoPaymentProps {
 
 export default function BoletoPayment({
   amount,
+  description = 'Checkout Clube Gestor',
   onPaymentSuccess,
   isLoading = false,
   customerId,
@@ -56,7 +58,7 @@ export default function BoletoPayment({
           customerId: customerId || undefined,
           holderInfo: holderInfo || undefined,
           amount,
-          description: 'Checkout Clube Gestor',
+          description,
           dueDate,
         }),
       });

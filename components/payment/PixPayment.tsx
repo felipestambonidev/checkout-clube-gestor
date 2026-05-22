@@ -19,6 +19,7 @@ interface HolderInfo {
 
 interface PixPaymentProps {
   amount: number;
+  description?: string;
   onPaymentSuccess: (paymentId: string) => void;
   isLoading?: boolean;
   customerId?: string;
@@ -27,6 +28,7 @@ interface PixPaymentProps {
 
 export default function PixPayment({
   amount,
+  description = 'Checkout Clube Gestor',
   onPaymentSuccess,
   isLoading = false,
   customerId,
@@ -55,7 +57,7 @@ export default function PixPayment({
           customerId: customerId || undefined,
           holderInfo: holderInfo || undefined,
           amount,
-          description: 'Checkout Clube Gestor',
+          description,
           dueDate,
         }),
       });
