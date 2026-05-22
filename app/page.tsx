@@ -27,16 +27,33 @@ export default function CheckoutPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showAsaasCheckout, setShowAsaasCheckout] = useState(false);
   
-  // Configuracoes carregadas do localStorage (definidas pelo admin)
+  // Configuracoes carregadas do servidor (definidas pelo admin)
   const [customPrice, setCustomPrice] = useState(228.00);
   const [paymentDescription, setPaymentDescription] = useState("357603 Turma");
+  const [configLoading, setConfigLoading] = useState(true);
 
-  // Carregar configuracoes do admin do localStorage
+  // Carregar configuracoes do servidor (API)
   useEffect(() => {
-    const savedPrice = localStorage.getItem("checkout_price");
-    const savedDescription = localStorage.getItem("checkout_description");
-    if (savedPrice) setCustomPrice(parseFloat(savedPrice) || 228.00);
-    if (savedDescription) setPaymentDescription(savedDescription);
+    const fetchConfig = async () => {
+      try {
+        const response = await fetch("/api/checkout-config");
+        const data = await response.json();
+        if (data.success && data.config) {
+          setCustomPrice(data.config.price);
+          setPaymentDescription(data.config.description);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar configuracoes:", error);
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+    
+    fetchConfig();
+    
+    // Atualizar a cada 30 segundos para pegar mudancas do admin
+    const interval = setInterval(fetchConfig, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const coursePrice = customPrice;
