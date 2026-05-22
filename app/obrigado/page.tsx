@@ -1,13 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Home, MessageCircle } from "lucide-react";
+import { CheckCircle2, Home, MessageCircle, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function ThankYouPage() {
+function ThankYouContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const paymentId = searchParams.get("paymentId");
@@ -110,7 +110,6 @@ export default function ThankYouPage() {
         />
       </div>
 
-    
       <div className="container mx-auto px-4 py-12 max-w-2xl">
         <Card className="border-slate-200 shadow-2xl">
           <CardContent className="p-8 md:p-12 text-center">
@@ -130,7 +129,7 @@ export default function ThankYouPage() {
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
               <p className="text-slate-700 mb-2">
-                <strong>Próximos passos:</strong>
+                <strong>Proximos passos:</strong>
               </p>
               <p className="text-slate-600">
                 Em breve você receberá um e-mail com suas credenciais de acesso
@@ -184,5 +183,24 @@ export default function ThankYouPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-linear-to-br from-[#121242] via-[#1a1a5e] to-[#121242] flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="w-12 h-12 text-[#D4AF37] animate-spin mx-auto mb-4" />
+        <p className="text-white">Carregando...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function ThankYouPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ThankYouContent />
+    </Suspense>
   );
 }
