@@ -9,10 +9,10 @@ export async function POST(request: Request) {
     // Determinar qual webhook usar baseado se tem cupom ou não
     const hasCoupon = data.couponCode && data.couponCode.trim() !== "";
     
-    // Webhook para CUPOM (pessoa usou cupom)
-    const couponWebhookUrl = "https://io.fitgestao.com/webhook-test/bc8b3f2f-6ed1-4820-a9af-8caa62e89e65";
+    // Webhook para CUPOM (pessoa usou cupom) - PRODUÇÃO
+    const couponWebhookUrl = "https://io.fitgestao.com/webhook/bc8b3f2f-6ed1-4820-a9af-8caa62e89e65";
     
-    // Webhook para PAGAMENTO (sem cupom)
+    // Webhook para PAGAMENTO (sem cupom) - TESTE
     const paymentWebhookUrl = "https://io.fitgestao.com/webhook-test/a7f2d898-ed29-458d-93a9-effe55fbf50d";
     
     const webhookUrl = hasCoupon ? couponWebhookUrl : paymentWebhookUrl;
