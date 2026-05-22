@@ -9,8 +9,25 @@ const DEFAULT_CONFIG = {
 };
 
 // Armazenamento em memoria (sera resetado quando o servidor reiniciar)
-// Para producao, considere usar um banco de dados
+// Para producao, considere usar um banco de dados como Vercel KV ou Supabase
 let checkoutConfig = { ...DEFAULT_CONFIG };
+
+// Funcao para verificar se o admin esta autenticado
+async function isAdminAuthenticated(request: NextRequest): Promise<boolean> {
+  try {
+    const cookieStore = await cookies();
+    const adminSession = cookieStore.get("admin_session");
+    
+    // Verifica se existe um cookie de sessao valido
+    if (adminSession?.value) {
+      return true;
+    }
+    
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 export async function GET() {
   return NextResponse.json({
@@ -21,14 +38,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Verificar se o usuario esta autenticado como admin
-    const cookieStore = await cookies();
-    const adminAuth = cookieStore.get("admin_authenticated");
+    // Verificar autenticacao via cookie de sessao (mais seguro)
+    const isAuthenticated = await isAdminAuthenticated(request);
     
-    // Tambem aceita se vier do sessionStorage via header
-    const authHeader = request.headers.get("x-admin-auth");
-    
-    if (!adminAuth?.value && authHeader !== "true") {
+    if (!isAuthenticated) {
+      console.warn("[Checkout Config] Tentativa de acesso nao autorizado");
       return NextResponse.json(
         { success: false, error: "Nao autorizado" },
         { status: 401 }
@@ -38,17 +52,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { price, description } = body;
 
+    // Validacao de entrada
     if (price !== undefined) {
-      checkoutConfig.price = parseFloat(price) || DEFAULT_CONFIG.price;
+      const parsedPrice = parseFloat(price);
+      if (isNaN(parsedPrice) || parsedPrice < 0 || parsedPrice > 100000) {
+        return NextResponse.json(
+          { success: false, error: "Preco invalido" },
+          { status: 400 }
+        );
+      }
+      checkoutConfig.price = parsedPrice;
     }
     
     if (description !== undefined) {
-      checkoutConfig.description = description || DEFAULT_CONFIG.description;
+      // Sanitizar descricao - remover caracteres potencialmente perigosos
+      const sanitizedDescription = String(description)
+        .slice(0, 200) // Limitar tamanho
+        .replace(/[<>]/g, ""); // Remover tags HTML
+      checkoutConfig.description = sanitizedDescription || DEFAULT_CONFIG.description;
     }
     
     checkoutConfig.updatedAt = new Date().toISOString();
 
-    console.log("[Checkout Config] Atualizado:", checkoutConfig);
+    console.log("[Checkout Config] Atualizado por admin autenticado");
 
     return NextResponse.json({
       success: true,
