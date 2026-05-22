@@ -2,11 +2,26 @@
 
 import { useState } from 'react';
 
+interface HolderInfo {
+  name: string;
+  email: string;
+  cpfCnpj: string;
+  phone?: string;
+  address: string;
+  addressNumber: string;
+  complement?: string;
+  province: string;
+  city?: string;
+  state?: string;
+  postalCode: string;
+}
+
 interface CardPaymentProps {
   amount: number;
   onPaymentSuccess: (paymentId: string) => void;
   isLoading?: boolean;
-  customerId: string;
+  customerId?: string; // Agora opcional
+  holderInfo?: HolderInfo; // Dados do comprador
 }
 
 export default function CardPayment({
@@ -14,6 +29,7 @@ export default function CardPayment({
   onPaymentSuccess,
   isLoading = false,
   customerId,
+  holderInfo,
 }: CardPaymentProps) {
   const [cardData, setCardData] = useState({
     holderName: '',
@@ -121,7 +137,8 @@ export default function CardPayment({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customerId,
+          customerId: customerId || undefined,
+          holderInfo: holderInfo || undefined,
           amount,
           description: 'Checkout Clube Gestor',
           dueDate,
