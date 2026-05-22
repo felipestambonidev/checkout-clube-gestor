@@ -77,20 +77,20 @@ export async function POST(request: NextRequest) {
 
 async function notifyN8n(payment: AsaasWebhookPayload['payment']) {
   try {
-    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
+    // Webhook específico para pagamentos ASAAS (sem cupom)
+    // Use a variável de ambiente ou a URL fixa de teste/produção
+    const n8nPaymentWebhookUrl = process.env.N8N_PAYMENT_WEBHOOK_URL || 
+      'https://io.fitgestao.com/webhook-test/a7f2d898-ed29-458d-93a9-effe55fbf50d';
 
-    if (!n8nWebhookUrl) {
-      console.log('[N8N] URL não configurada, pulando notificação');
-      return;
-    }
+    console.log('[N8N Payment] Enviando para:', n8nPaymentWebhookUrl);
 
-    const response = await fetch(n8nWebhookUrl, {
+    const response = await fetch(n8nPaymentWebhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        source: 'asaas_webhook',
+        source: 'asaas_payment_confirmed',
         paymentId: payment.id,
         customerId: payment.customer,
         status: payment.status,
@@ -104,11 +104,11 @@ async function notifyN8n(payment: AsaasWebhookPayload['payment']) {
     });
 
     if (!response.ok) {
-      console.error('[N8N] Erro ao notificar:', response.status);
+      console.error('[N8N Payment] Erro ao notificar:', response.status);
     } else {
-      console.log('[N8N] Notificação enviada com sucesso');
+      console.log('[N8N Payment] Notificação enviada com sucesso');
     }
   } catch (error) {
-    console.error('[N8N] Erro ao enviar notificação:', error);
+    console.error('[N8N Payment] Erro ao enviar notificação:', error);
   }
 }

@@ -43,6 +43,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar cliente no ASAAS
+    console.log('[ASAAS] Criando cliente com dados:', {
+      name: data.name,
+      email: data.email,
+      cpfCnpj: data.cpfCnpj.replace(/\D/g, '').substring(0, 3) + '***',
+    });
+
     const response = await fetch(`${apiUrl}/customers`, {
       method: 'POST',
       headers: {
@@ -53,24 +59,24 @@ export async function POST(request: NextRequest) {
         name: data.name,
         email: data.email,
         cpfCnpj: data.cpfCnpj.replace(/\D/g, ''),
-        phone: data.phone?.replace(/\D/g, ''),
-        mobilePhone: data.mobilePhone?.replace(/\D/g, ''),
+        phone: data.phone?.replace(/\D/g, '') || undefined,
+        mobilePhone: data.mobilePhone?.replace(/\D/g, '') || data.phone?.replace(/\D/g, '') || undefined,
         address: data.address,
         addressNumber: data.addressNumber,
-        complement: data.complement || '',
+        complement: data.complement || undefined,
         province: data.province,
-        city: data.city,
-        state: data.state,
         postalCode: data.postalCode.replace(/\D/g, ''),
       }),
     });
 
     const result = await response.json();
 
+    console.log('[ASAAS] Resposta:', response.status, JSON.stringify(result).substring(0, 200));
+
     if (!response.ok) {
       console.error('[ASAAS] Erro ao criar cliente:', result);
       return NextResponse.json(
-        { error: result.errors?.[0]?.detail || 'Erro ao criar cliente' },
+        { error: result.errors?.[0]?.description || result.errors?.[0]?.detail || 'Erro ao criar cliente' },
         { status: response.status }
       );
     }

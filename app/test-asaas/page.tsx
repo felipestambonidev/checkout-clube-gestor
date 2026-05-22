@@ -59,22 +59,20 @@ export default function TestAsaasPage() {
       });
     }
 
-    // Test 2: Criar cliente de teste
+    // Test 2: Criar cliente de teste (usando CPF válido de teste)
     try {
       const response = await fetch('/api/asaas/create-customer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: 'Teste Cliente',
-          email: 'teste@example.com',
-          cpfCnpj: '12345678901234',
-          phone: '1199999999',
-          address: 'Rua Teste',
-          addressNumber: '123',
-          province: 'Centro',
-          city: 'São Paulo',
-          state: 'SP',
-          postalCode: '01000000',
+          name: 'Cliente Teste v0',
+          email: `teste${Date.now()}@example.com`,
+          cpfCnpj: '24971563792',
+          phone: '11999999999',
+          address: 'Avenida Paulista',
+          addressNumber: '1000',
+          province: 'Bela Vista',
+          postalCode: '01310100',
         }),
       });
 
@@ -84,7 +82,7 @@ export default function TestAsaasPage() {
         success: response.ok,
         message: response.ok 
           ? `Cliente criado: ${data.customerId}` 
-          : data.error || 'Erro desconhecido',
+          : data.error || 'Erro ao criar cliente',
       });
     } catch (error) {
       results.push({
@@ -124,16 +122,16 @@ export default function TestAsaasPage() {
       });
     }
 
-    // Test 4: ViaCEP Integration
+    // Test 4: ViaCEP Integration (usando CEP válido da Av. Paulista)
     try {
-      const response = await fetch('https://viacep.com.br/ws/01000000/json/');
+      const response = await fetch('https://viacep.com.br/ws/01310100/json/');
       const data = await response.json();
       const success = !data.erro && data.localidade;
       results.push({
         name: 'ViaCEP Integration',
         success,
         message: success 
-          ? `CEP válido: ${data.localidade}, ${data.uf}` 
+          ? `CEP válido: ${data.logradouro}, ${data.localidade}/${data.uf}` 
           : 'CEP inválido ou indisponível',
       });
     } catch (error) {
