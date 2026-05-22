@@ -98,6 +98,21 @@ export default function AdminPage() {
   const [checkoutPrice, setCheckoutPrice] = useState("228.00");
   const [checkoutDescription, setCheckoutDescription] = useState("357603 Turma");
   const [configSaved, setConfigSaved] = useState(false);
+  const [configSaving, setConfigSaving] = useState(false);
+
+  // Funcao para carregar config do servidor
+  const loadCheckoutConfig = async () => {
+    try {
+      const response = await fetch("/api/checkout-config");
+      const data = await response.json();
+      if (data.success && data.config) {
+        setCheckoutPrice(data.config.price.toString());
+        setCheckoutDescription(data.config.description);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar config:", error);
+    }
+  };
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem("admin_authenticated");
@@ -106,11 +121,7 @@ export default function AdminPage() {
       loadCoupons();
       loadAceleradorCoupons();
       loadCheckouts();
-      // Load checkout config from localStorage
-      const savedPrice = localStorage.getItem("checkout_price");
-      const savedDescription = localStorage.getItem("checkout_description");
-      if (savedPrice) setCheckoutPrice(savedPrice);
-      if (savedDescription) setCheckoutDescription(savedDescription);
+      loadCheckoutConfig();
     } else {
       setLoading(false);
       setLoadingAcelerador(false);
@@ -1184,17 +1195,40 @@ export default function AdminPage() {
                   </p>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex gap-4 items-center">
                   <Button
-                    onClick={() => {
-                      localStorage.setItem("checkout_price", checkoutPrice);
-                      localStorage.setItem("checkout_description", checkoutDescription);
-                      setConfigSaved(true);
-                      setTimeout(() => setConfigSaved(false), 3000);
+                    onClick={async () => {
+                      setConfigSaving(true);
+                      try {
+                        const response = await fetch("/api/checkout-config", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            "x-admin-auth": "true",
+                          },
+                          body: JSON.stringify({
+                            price: parseFloat(checkoutPrice),
+                            description: checkoutDescription,
+                          }),
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                          setConfigSaved(true);
+                          setTimeout(() => setConfigSaved(false), 3000);
+                        } else {
+                          alert("Erro ao salvar: " + (data.error || "Erro desconhecido"));
+                        }
+                      } catch (error) {
+                        console.error("Erro ao salvar config:", error);
+                        alert("Erro ao salvar configuracoes");
+                      } finally {
+                        setConfigSaving(false);
+                      }
                     }}
-                    className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] font-medium px-8 cursor-pointer"
+                    disabled={configSaving}
+                    className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] font-medium px-8 cursor-pointer disabled:opacity-50"
                   >
-                    Salvar Configuracoes
+                    {configSaving ? "Salvando..." : "Salvar Configuracoes"}
                   </Button>
                   {configSaved && (
                     <span className="text-green-600 font-medium flex items-center">
