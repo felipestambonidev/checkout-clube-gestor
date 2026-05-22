@@ -146,6 +146,7 @@ export default function CheckoutPage() {
           cpfCnpj,
           couponCode: appliedCoupon?.code || "",
           finalPrice,
+          description: paymentDescription,
           timestamp: new Date().toISOString(),
         };
         
@@ -224,6 +225,7 @@ export default function CheckoutPage() {
       cpfCnpj,
       couponCode: appliedCoupon?.code || "",
       finalPrice,
+      description: paymentDescription,
       timestamp: new Date().toISOString(),
     }));
 

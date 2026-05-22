@@ -35,6 +35,7 @@ function ThankYouContent() {
             ...checkoutData,
             paymentId: paymentId || null,
             source: "asaas_payment_success",
+            description: checkoutData.description || "",
           };
 
           const response = await fetch("/api/send-webhook", {
