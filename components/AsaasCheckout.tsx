@@ -1,29 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AddressForm, { AddressData } from './payment/AddressForm';
 import CardPayment from './payment/CardPayment';
 import PixPayment from './payment/PixPayment';
 import BoletoPayment from './payment/BoletoPayment';
 
-interface CustomerData {
-  name: string;
-  email: string;
-  cpfCnpj: string;
-  phone: string;
-}
-
 interface AsaasCheckoutProps {
   amount: number;
-  customerData?: CustomerData;
   onCouponApplied?: (discountedAmount: number) => void;
 }
 
 type PaymentMethod = 'card' | 'pix' | 'boleto';
 type Step = 'address' | 'payment' | 'success';
 
-export default function AsaasCheckout({ amount, customerData, onCouponApplied }: AsaasCheckoutProps) {
+export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckoutProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>('address');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
@@ -31,24 +23,6 @@ export default function AsaasCheckout({ amount, customerData, onCouponApplied }:
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [paymentId, setPaymentId] = useState('');
-
-  // Carregar dados do cliente do sessionStorage se não fornecidos via props
-  const [initialCustomerData, setInitialCustomerData] = useState<CustomerData | undefined>(customerData);
-
-  useEffect(() => {
-    if (!customerData) {
-      const checkoutDataStr = sessionStorage.getItem('checkout_data');
-      if (checkoutDataStr) {
-        const checkoutData = JSON.parse(checkoutDataStr);
-        setInitialCustomerData({
-          name: checkoutData.name || '',
-          email: checkoutData.email || '',
-          cpfCnpj: checkoutData.cpfCnpj || '',
-          phone: checkoutData.phone || '',
-        });
-      }
-    }
-  }, [customerData]);
 
   const handleAddressSubmit = async (addressData: AddressData) => {
     setLoading(true);
@@ -234,11 +208,7 @@ export default function AsaasCheckout({ amount, customerData, onCouponApplied }:
       {/* Address Form */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-xl font-bold mb-6">Endereço de Entrega</h2>
-        <AddressForm 
-          onSubmit={handleAddressSubmit} 
-          isLoading={loading} 
-          initialData={initialCustomerData}
-        />
+        <AddressForm onSubmit={handleAddressSubmit} isLoading={loading} />
       </div>
 
       {/* Security Info */}

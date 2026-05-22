@@ -6,8 +6,8 @@ export async function POST(request: Request) {
     
     console.log("[v0] Sending data to n8n webhook:", data);
 
-    // URL do webhook - usar webhook-test para cupom gratuito
-    const webhookUrl = "https://io.fitgestao.com/webhook-test/bc8b3f2f-6ed1-4820-a9af-8caa62e89e65";
+    // Fazer a requisição para o webhook do n8n
+    const webhookUrl = "https://io.fitgestao.com/webhook/bc8b3f2f-6ed1-4820-a9af-8caa62e89e65";
     
     const response = await fetch(webhookUrl, {
       method: "POST",

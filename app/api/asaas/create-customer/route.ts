@@ -19,13 +19,6 @@ export async function POST(request: NextRequest) {
   try {
     const data: CustomerData = await request.json();
 
-    console.log('[ASAAS] Dados recebidos para criar cliente:', {
-      name: data.name,
-      email: data.email,
-      cpfCnpj: data.cpfCnpj ? '***' : 'não informado',
-      hasAddress: !!data.address,
-    });
-
     // Validação básica
     if (!data.name || !data.email || !data.cpfCnpj) {
       return NextResponse.json(
@@ -35,17 +28,10 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = process.env.ASAAS_API_KEY;
-    // Usar sandbox por padrão se não configurada a URL
     const apiUrl = process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3';
 
-    console.log('[ASAAS] Usando API URL:', apiUrl);
-
     if (!apiKey) {
-      console.error('[ASAAS] ASAAS_API_KEY não configurada');
-      return NextResponse.json(
-        { error: 'ASAAS_API_KEY não configurada no ambiente' },
-        { status: 500 }
-      );
+      throw new Error('ASAAS_API_KEY não configurada');
     }
 
     // Criar cliente no ASAAS
@@ -73,17 +59,10 @@ export async function POST(request: NextRequest) {
 
     const result = await response.json();
 
-    console.log('[ASAAS] Resposta da API:', {
-      status: response.status,
-      ok: response.ok,
-      result: response.ok ? { id: result.id } : result,
-    });
-
     if (!response.ok) {
-      console.error('[ASAAS] Erro ao criar cliente:', JSON.stringify(result, null, 2));
-      const errorMessage = result.errors?.[0]?.description || result.errors?.[0]?.detail || result.message || 'Erro ao criar cliente';
+      console.error('[ASAAS] Erro ao criar cliente:', result);
       return NextResponse.json(
-        { error: errorMessage, details: result },
+        { error: result.errors?.[0]?.detail || 'Erro ao criar cliente' },
         { status: response.status }
       );
     }
