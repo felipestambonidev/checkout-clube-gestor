@@ -80,7 +80,7 @@ async function notifyN8n(payment: AsaasWebhookPayload['payment']) {
     // Webhook específico para pagamentos ASAAS (sem cupom)
     // Use a variável de ambiente ou a URL fixa de teste/produção
     const n8nPaymentWebhookUrl = process.env.N8N_PAYMENT_WEBHOOK_URL || 
-      'https://io.fitgestao.com/webhook-test/a7f2d898-ed29-458d-93a9-effe55fbf50d';
+      'https://io.fitgestao.com/webhook/a7f2d898-ed29-458d-93a9-effe55fbf50d';
 
     console.log('[N8N Payment] Enviando para:', n8nPaymentWebhookUrl);
     console.log('[N8N Payment] Descrição do pagamento:', payment.description);
