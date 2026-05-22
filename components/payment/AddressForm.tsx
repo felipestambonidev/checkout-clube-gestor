@@ -20,21 +20,22 @@ export interface AddressData {
 interface AddressFormProps {
   onSubmit: (data: AddressData) => void;
   isLoading?: boolean;
+  initialData?: Partial<AddressData>;
 }
 
-export default function AddressForm({ onSubmit, isLoading = false }: AddressFormProps) {
+export default function AddressForm({ onSubmit, isLoading = false, initialData }: AddressFormProps) {
   const [formData, setFormData] = useState<AddressData>({
-    name: '',
-    email: '',
-    cpf: '',
-    phone: '',
-    address: '',
-    addressNumber: '',
-    complement: '',
-    province: '',
-    city: '',
-    state: '',
-    postalCode: '',
+    name: initialData?.name || '',
+    email: initialData?.email || '',
+    cpf: initialData?.cpf || '',
+    phone: initialData?.phone || '',
+    address: initialData?.address || '',
+    addressNumber: initialData?.addressNumber || '',
+    complement: initialData?.complement || '',
+    province: initialData?.province || '',
+    city: initialData?.city || '',
+    state: initialData?.state || '',
+    postalCode: initialData?.postalCode || '',
   });
 
   const [cepLoading, setCepLoading] = useState(false);

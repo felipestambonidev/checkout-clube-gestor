@@ -42,12 +42,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Formatar telefone - ASAAS exige 10 ou 11 dígitos (DDD + número)
+    const formatPhone = (phone?: string) => {
+      if (!phone) return undefined;
+      const cleanPhone = phone.replace(/\D/g, '');
+      // Se tiver 11 dígitos (celular com 9), retorna como está
+      // Se tiver 10 dígitos (fixo), retorna como está
+      // Senão, retorna undefined para não enviar campo inválido
+      if (cleanPhone.length === 10 || cleanPhone.length === 11) {
+        return cleanPhone;
+      }
+      return undefined;
+    };
+
+    const formattedPhone = formatPhone(data.phone);
+    const formattedMobilePhone = formatPhone(data.mobilePhone) || formattedPhone;
+
     // Criar cliente no ASAAS
     console.log('[ASAAS] Criando cliente com dados:', {
       name: data.name,
       email: data.email,
       cpfCnpj: data.cpfCnpj.replace(/\D/g, '').substring(0, 3) + '***',
+      phone: formattedPhone,
     });
+
+    const customerPayload: Record<string, unknown> = {
+      name: data.name,
+      email: data.email,
+      cpfCnpj: data.cpfCnpj.replace(/\D/g, ''),
+      address: data.address,
+      addressNumber: data.addressNumber,
+      complement: data.complement || undefined,
+      province: data.province,
+      postalCode: data.postalCode.replace(/\D/g, ''),
+    };
+
+    // Só adiciona telefone se for válido
+    if (formattedPhone) {
+      customerPayload.phone = formattedPhone;
+    }
+    if (formattedMobilePhone) {
+      customerPayload.mobilePhone = formattedMobilePhone;
+    }
 
     const response = await fetch(`${apiUrl}/customers`, {
       method: 'POST',
@@ -55,18 +91,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         'access_token': apiKey,
       },
-      body: JSON.stringify({
-        name: data.name,
-        email: data.email,
-        cpfCnpj: data.cpfCnpj.replace(/\D/g, ''),
-        phone: data.phone?.replace(/\D/g, '') || undefined,
-        mobilePhone: data.mobilePhone?.replace(/\D/g, '') || data.phone?.replace(/\D/g, '') || undefined,
-        address: data.address,
-        addressNumber: data.addressNumber,
-        complement: data.complement || undefined,
-        province: data.province,
-        postalCode: data.postalCode.replace(/\D/g, ''),
-      }),
+      body: JSON.stringify(customerPayload),
     });
 
     const result = await response.json();

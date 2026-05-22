@@ -1,11 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AddressForm, { AddressData } from './payment/AddressForm';
 import CardPayment from './payment/CardPayment';
 import PixPayment from './payment/PixPayment';
 import BoletoPayment from './payment/BoletoPayment';
+
+interface CheckoutData {
+  name?: string;
+  email?: string;
+  cpfCnpj?: string;
+  phone?: string;
+}
 
 interface AsaasCheckoutProps {
   amount: number;
@@ -23,17 +30,51 @@ export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckout
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [paymentId, setPaymentId] = useState('');
+  const [initialData, setInitialData] = useState<Partial<AddressData>>({});
+
+  // Carregar dados do checkout do sessionStorage
+  useEffect(() => {
+    try {
+      const checkoutDataStr = sessionStorage.getItem('checkout_data');
+      if (checkoutDataStr) {
+        const checkoutData: CheckoutData = JSON.parse(checkoutDataStr);
+        setInitialData({
+          name: checkoutData.name || '',
+          email: checkoutData.email || '',
+          cpf: checkoutData.cpfCnpj || '',
+          phone: checkoutData.phone || '',
+        });
+      }
+    } catch (err) {
+      console.error('[AsaasCheckout] Erro ao carregar dados:', err);
+    }
+  }, []);
 
   const handleAddressSubmit = async (addressData: AddressData) => {
     setLoading(true);
     setError('');
 
     try {
+      // Mapear dados do formulário para o formato da API ASAAS
+      const customerData = {
+        name: addressData.name,
+        email: addressData.email,
+        cpfCnpj: addressData.cpf, // AddressForm usa 'cpf', API usa 'cpfCnpj'
+        phone: addressData.phone,
+        address: addressData.address,
+        addressNumber: addressData.addressNumber,
+        complement: addressData.complement,
+        province: addressData.province,
+        city: addressData.city,
+        state: addressData.state,
+        postalCode: addressData.postalCode,
+      };
+
       // Criar cliente no ASAAS
       const response = await fetch('/api/asaas/create-customer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(addressData),
+        body: JSON.stringify(customerData),
       });
 
       const result = await response.json();
@@ -208,7 +249,7 @@ export default function AsaasCheckout({ amount, onCouponApplied }: AsaasCheckout
       {/* Address Form */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-xl font-bold mb-6">Endereço de Entrega</h2>
-        <AddressForm onSubmit={handleAddressSubmit} isLoading={loading} />
+        <AddressForm onSubmit={handleAddressSubmit} isLoading={loading} initialData={initialData} />
       </div>
 
       {/* Security Info */}
