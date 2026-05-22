@@ -139,6 +139,7 @@ export default function AdminPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
+        credentials: "include", // Importante para receber cookies
       });
 
       if (response.ok) {
@@ -147,8 +148,10 @@ export default function AdminPage() {
         loadCoupons();
         loadAceleradorCoupons();
         loadCheckouts();
+        loadCheckoutConfig();
       } else {
-        setAuthError("Usuário ou senha incorretos");
+        const data = await response.json();
+        setAuthError(data.error || "Usuario ou senha incorretos");
       }
     } catch (error) {
       setAuthError("Erro ao fazer login");
@@ -1204,8 +1207,8 @@ export default function AdminPage() {
                           method: "POST",
                           headers: {
                             "Content-Type": "application/json",
-                            "x-admin-auth": "true",
                           },
+                          credentials: "include", // Usa cookies HTTP-only para autenticacao
                           body: JSON.stringify({
                             price: parseFloat(checkoutPrice),
                             description: checkoutDescription,
