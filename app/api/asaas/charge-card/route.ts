@@ -38,14 +38,27 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = process.env.ASAAS_API_KEY;
-    const apiUrl = process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3';
+    const apiUrl = process.env.ASAAS_API_URL;
+
+    // Verificar se ASAAS_API_URL está configurada
+    if (!apiUrl) {
+      console.error('[ASAAS CARD] ASAAS_API_URL não configurada');
+      return NextResponse.json(
+        { error: 'ASAAS_API_URL não configurada. Configure a URL da API (sandbox ou produção).' },
+        { status: 500 }
+      );
+    }
 
     if (!apiKey) {
+      console.error('[ASAAS CARD] ASAAS_API_KEY não configurada');
       return NextResponse.json(
         { error: 'ASAAS_API_KEY não configurada' },
         { status: 500 }
       );
     }
+
+    console.log('[ASAAS CARD] Usando API URL:', apiUrl);
+    console.log('[ASAAS CARD] API Key presente:', !!apiKey);
 
     let customerId = data.customerId;
     let holderInfo = data.holderInfo;
@@ -105,7 +118,7 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    console.log('[ASAAS] Processando pagamento para cliente:', customerId);
+    console.log('[ASAAS CARD] Processando pagamento para cliente:', customerId);
 
     const response = await fetch(`${apiUrl}/payments`, {
       method: 'POST',
@@ -118,16 +131,19 @@ export async function POST(request: NextRequest) {
 
     const result = await response.json();
 
+    console.log('[ASAAS CARD] Resposta da API:', response.status, JSON.stringify(result, null, 2));
+
     if (!response.ok) {
-      console.error('[ASAAS] Erro ao processar cartao:', JSON.stringify(result, null, 2));
+      console.error('[ASAAS CARD] Erro ao processar cartao:', JSON.stringify(result, null, 2));
       const errorMessage =
         result.errors?.[0]?.description ||
         result.errors?.[0]?.detail ||
+        result.message ||
         'Erro ao processar cartao';
-      return NextResponse.json({ error: errorMessage }, { status: response.status });
+      return NextResponse.json({ error: errorMessage, details: result }, { status: response.status });
     }
 
-    console.log('[ASAAS] Pagamento processado:', result.id, result.status);
+    console.log('[ASAAS CARD] Pagamento processado:', result.id, result.status);
 
     return NextResponse.json({
       paymentId: result.id,
@@ -135,9 +151,10 @@ export async function POST(request: NextRequest) {
       status: result.status,
     });
   } catch (error) {
-    console.error('[ASAAS] Erro:', error);
+    console.error('[ASAAS CARD] Erro inesperado:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao processar pagamento';
     return NextResponse.json(
-      { error: 'Erro ao processar pagamento' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
