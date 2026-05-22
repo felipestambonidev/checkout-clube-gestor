@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchAddressFromCEP, formatCEP } from '@/lib/viacep';
 
 export interface AddressData {
   name: string;
   email: string;
-  cpf: string;
+  cpfCnpj: string;
   phone: string;
   address: string;
   addressNumber: string;
@@ -17,16 +17,24 @@ export interface AddressData {
   postalCode: string;
 }
 
+interface InitialCustomerData {
+  name?: string;
+  email?: string;
+  cpfCnpj?: string;
+  phone?: string;
+}
+
 interface AddressFormProps {
   onSubmit: (data: AddressData) => void;
   isLoading?: boolean;
+  initialData?: InitialCustomerData;
 }
 
-export default function AddressForm({ onSubmit, isLoading = false }: AddressFormProps) {
+export default function AddressForm({ onSubmit, isLoading = false, initialData }: AddressFormProps) {
   const [formData, setFormData] = useState<AddressData>({
     name: '',
     email: '',
-    cpf: '',
+    cpfCnpj: '',
     phone: '',
     address: '',
     addressNumber: '',
@@ -36,6 +44,19 @@ export default function AddressForm({ onSubmit, isLoading = false }: AddressForm
     state: '',
     postalCode: '',
   });
+
+  // Preencher dados iniciais do cliente quando disponíveis
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        name: initialData.name || prev.name,
+        email: initialData.email || prev.email,
+        cpfCnpj: initialData.cpfCnpj || prev.cpfCnpj,
+        phone: initialData.phone || prev.phone,
+      }));
+    }
+  }, [initialData]);
 
   const [cepLoading, setCepLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<AddressData>>({});
@@ -67,7 +88,7 @@ export default function AddressForm({ onSubmit, isLoading = false }: AddressForm
 
     if (!formData.name.trim()) newErrors.name = 'Nome é obrigatório';
     if (!formData.email.trim()) newErrors.email = 'Email é obrigatório';
-    if (!formData.cpf.trim()) newErrors.cpf = 'CPF é obrigatório';
+    if (!formData.cpfCnpj.trim()) newErrors.cpfCnpj = 'CPF/CNPJ é obrigatório';
     if (!formData.phone.trim()) newErrors.phone = 'Telefone é obrigatório';
     if (!formData.address.trim()) newErrors.address = 'Endereço é obrigatório';
     if (!formData.addressNumber.trim()) newErrors.addressNumber = 'Número é obrigatório';
@@ -112,8 +133,9 @@ export default function AddressForm({ onSubmit, isLoading = false }: AddressForm
             type="text"
             value={formData.name}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${initialData?.name ? 'bg-blue-50' : ''}`}
             disabled={isLoading}
+            readOnly={!!initialData?.name}
           />
           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
         </div>
@@ -129,28 +151,30 @@ export default function AddressForm({ onSubmit, isLoading = false }: AddressForm
             type="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${initialData?.email ? 'bg-blue-50' : ''}`}
             disabled={isLoading}
+            readOnly={!!initialData?.email}
           />
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
         </div>
 
-        {/* CPF */}
+        {/* CPF/CNPJ */}
         <div>
-          <label htmlFor="cpf" className="block text-sm font-medium mb-1">
-            CPF (sem formatação)
+          <label htmlFor="cpfCnpj" className="block text-sm font-medium mb-1">
+            CPF ou CNPJ
           </label>
           <input
-            id="cpf"
-            name="cpf"
+            id="cpfCnpj"
+            name="cpfCnpj"
             type="text"
-            placeholder="11999999999"
-            value={formData.cpf}
+            placeholder="000.000.000-00"
+            value={formData.cpfCnpj}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50"
             disabled={isLoading}
+            readOnly={!!initialData?.cpfCnpj}
           />
-          {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf}</p>}
+          {errors.cpfCnpj && <p className="text-red-500 text-xs mt-1">{errors.cpfCnpj}</p>}
         </div>
 
         {/* Telefone */}
@@ -165,8 +189,9 @@ export default function AddressForm({ onSubmit, isLoading = false }: AddressForm
             placeholder="(11) 99999-9999"
             value={formData.phone}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${initialData?.phone ? 'bg-blue-50' : ''}`}
             disabled={isLoading}
+            readOnly={!!initialData?.phone}
           />
           {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
         </div>
