@@ -23,7 +23,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Users, Tag, Calendar, Rocket, Trash2, UserPlus, CreditCard } from "lucide-react";
+import { Plus, Users, Tag, Calendar, Rocket, Trash2, UserPlus, CreditCard, FileDown } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Coupon {
   code: string;
@@ -322,6 +324,134 @@ export default function AdminPage() {
     });
   };
 
+  // Funcao para gerar PDF de convidados do Workshop
+  const generateWorkshopPDF = () => {
+    const doc = new jsPDF();
+    const allUsers: Array<{ name: string; phone: string; email: string; company: string; cpfCnpj: string; usedAt: string; couponCode: string }> = [];
+
+    // Coletar todos os usuários de todos os cupons
+    coupons.forEach((coupon) => {
+      coupon.usedBy.forEach((user) => {
+        allUsers.push({
+          ...user,
+          couponCode: coupon.code,
+        });
+      });
+    });
+
+    // Header
+    doc.setFontSize(18);
+    doc.setTextColor(18, 18, 66);
+    doc.text("Lista de Convidados - Workshop Gestao do Tempo", 14, 22);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}`, 14, 30);
+    doc.text(`Total de convidados: ${allUsers.length}`, 14, 36);
+
+    // Tabela
+    autoTable(doc, {
+      startY: 42,
+      head: [["Nome", "Telefone", "Email", "Empresa", "CPF/CNPJ", "Cupom", "Usado em"]],
+      body: allUsers.map((user) => [
+        user.name,
+        user.phone,
+        user.email,
+        user.company || "-",
+        user.cpfCnpj,
+        user.couponCode,
+        formatDate(user.usedAt),
+      ]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [192, 153, 46], textColor: [18, 18, 66] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    doc.save("convidados-workshop.pdf");
+  };
+
+  // Funcao para gerar PDF de convidados do Acelerador
+  const generateAceleradorPDF = () => {
+    const doc = new jsPDF();
+    const allUsers: Array<{ name: string; phone: string; email: string; company: string; cpfCnpj: string; usedAt: string; couponCode: string }> = [];
+
+    // Coletar todos os usuários de todos os cupons
+    aceleradorCoupons.forEach((coupon) => {
+      coupon.usedBy.forEach((user) => {
+        allUsers.push({
+          ...user,
+          couponCode: coupon.code,
+        });
+      });
+    });
+
+    // Header
+    doc.setFontSize(18);
+    doc.setTextColor(18, 18, 66);
+    doc.text("Lista de Convidados - Acelerador de Resultados", 14, 22);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}`, 14, 30);
+    doc.text(`Total de convidados: ${allUsers.length}`, 14, 36);
+
+    // Tabela
+    autoTable(doc, {
+      startY: 42,
+      head: [["Nome", "Telefone", "Email", "Empresa", "CPF/CNPJ", "Cupom", "Usado em"]],
+      body: allUsers.map((user) => [
+        user.name,
+        user.phone,
+        user.email,
+        user.company || "-",
+        user.cpfCnpj,
+        user.couponCode,
+        formatDate(user.usedAt),
+      ]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [192, 153, 46], textColor: [18, 18, 66] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    doc.save("convidados-acelerador.pdf");
+  };
+
+  // Funcao para gerar PDF de cadastros sem cupom
+  const generateCheckoutsPDF = () => {
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFontSize(18);
+    doc.setTextColor(18, 18, 66);
+    doc.text("Lista de Cadastros sem Cupom", 14, 22);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}`, 14, 30);
+    doc.text(`Total de cadastros: ${checkouts.length}`, 14, 36);
+
+    // Tabela
+    autoTable(doc, {
+      startY: 42,
+      head: [["Nome", "Telefone", "Email", "Empresa", "CPF/CNPJ", "Evento", "Valor", "Data"]],
+      body: checkouts.map((checkout) => [
+        checkout.name,
+        checkout.phone,
+        checkout.email,
+        checkout.company || "-",
+        checkout.cpfCnpj,
+        checkout.event === "workshop" ? "Workshop" : "Acelerador",
+        `R$ ${checkout.finalPrice?.toFixed(2) || "0.00"}`,
+        formatDate(checkout.createdAt),
+      ]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [192, 153, 46], textColor: [18, 18, 66] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    doc.save("cadastros-sem-cupom.pdf");
+  };
+
   const openRemoveConfirmation = (couponCode: string, userEmail: string, userName: string) => {
     setUserToRemove({ couponCode, userEmail, userName });
     setConfirmRemoveDialogOpen(true);
@@ -512,6 +642,18 @@ export default function AdminPage() {
 
         {activeTab === "workshop" && (
           <>
+            {/* Botao Exportar PDF - Workshop */}
+            <div className="flex justify-end mb-4">
+              <Button
+                onClick={generateWorkshopPDF}
+                className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] cursor-pointer"
+                disabled={coupons.reduce((acc, c) => acc + c.usedCount, 0) === 0}
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar Lista de Convidados (PDF)
+              </Button>
+            </div>
+
             {/* Stats Cards */}
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <Card className="border-slate-200">
@@ -630,6 +772,18 @@ export default function AdminPage() {
 
         {activeTab === "acelerador" && (
           <>
+            {/* Botao Exportar PDF - Acelerador */}
+            <div className="flex justify-end mb-4">
+              <Button
+                onClick={generateAceleradorPDF}
+                className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] cursor-pointer"
+                disabled={aceleradorCoupons.reduce((acc, c) => acc + c.usedCount, 0) === 0}
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar Lista de Convidados (PDF)
+              </Button>
+            </div>
+
             {/* Stats Cards - Acelerador */}
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <Card className="border-slate-200">
@@ -1011,6 +1165,18 @@ export default function AdminPage() {
         {/* Checkouts sem Cupom Tab */}
         {activeTab === "checkouts" && (
           <>
+            {/* Botao Exportar PDF - Checkouts */}
+            <div className="flex justify-end mb-4">
+              <Button
+                onClick={generateCheckoutsPDF}
+                className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] cursor-pointer"
+                disabled={checkouts.length === 0}
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar Lista de Cadastros (PDF)
+              </Button>
+            </div>
+
             {/* Stats Cards - Checkouts */}
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <Card className="border-slate-200">
