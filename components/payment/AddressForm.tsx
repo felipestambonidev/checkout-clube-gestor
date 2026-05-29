@@ -314,7 +314,7 @@ export default function AddressForm({ onSubmit, isLoading = false, initialData }
         disabled={isLoading || cepLoading}
         className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
-        {isLoading ? 'Processando...' : 'Confirmar Endereço'}
+        {isLoading ? 'Processando...' : 'Confirmar Dados'}
       </button>
     </form>
   );
