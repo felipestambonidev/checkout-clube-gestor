@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME, PARTITION_KEY } from "@/lib/dynamodb";
 
@@ -8,6 +9,23 @@ interface CheckoutConfig {
   price: number;
   description: string;
   updatedAt: string;
+}
+
+// Funcao para verificar se o admin esta autenticado
+async function isAdminAuthenticated(): Promise<boolean> {
+  try {
+    const cookieStore = await cookies();
+    const adminSession = cookieStore.get("admin_session");
+    
+    // Verifica se existe um cookie de sessao valido
+    if (adminSession?.value) {
+      return true;
+    }
+    
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 // GET - Buscar configuração atual
@@ -54,11 +72,13 @@ export async function GET() {
 // POST - Salvar configuração
 export async function POST(request: NextRequest) {
   try {
-    // Verificar autenticação via cookie
-    const authCookie = request.cookies.get("admin_auth");
-    if (!authCookie || authCookie.value !== "authenticated") {
+    // Verificar autenticação via cookie de sessão
+    const isAuthenticated = await isAdminAuthenticated();
+    
+    if (!isAuthenticated) {
+      console.warn("[Checkout Config Acelerador] Tentativa de acesso nao autorizado");
       return NextResponse.json(
-        { error: "Não autorizado" },
+        { success: false, error: "Não autorizado" },
         { status: 401 }
       );
     }
