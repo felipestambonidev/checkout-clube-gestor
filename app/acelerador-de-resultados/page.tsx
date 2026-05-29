@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Tag, AlertCircle, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import AsaasCheckout from "@/components/AsaasCheckout";
 
 export default function AceleradorDeResultadosPage() {
   const router = useRouter();
@@ -24,8 +25,38 @@ export default function AceleradorDeResultadosPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [showAsaasCheckout, setShowAsaasCheckout] = useState(false);
+  
+  // Configuracoes carregadas do servidor (definidas pelo admin)
+  const [customPrice, setCustomPrice] = useState(949.00);
+  const [paymentDescription, setPaymentDescription] = useState("Acelerador de Resultados");
+  const [configLoading, setConfigLoading] = useState(true);
 
-  const coursePrice = 948.72;
+  // Carregar configuracoes do servidor (API)
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const response = await fetch("/api/checkout-config-acelerador");
+        const data = await response.json();
+        if (data.success && data.config) {
+          setCustomPrice(data.config.price);
+          setPaymentDescription(data.config.description);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar configuracoes:", error);
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+    
+    fetchConfig();
+    
+    // Atualizar a cada 30 segundos para pegar mudancas do admin
+    const interval = setInterval(fetchConfig, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const coursePrice = customPrice;
   const finalPrice = appliedCoupon
     ? coursePrice * (1 - appliedCoupon.discount / 100)
     : coursePrice;
@@ -120,96 +151,141 @@ export default function AceleradorDeResultadosPage() {
   };
 
   const handleProceedToPayment = async () => {
-    // Enviar dados para o webhook do n8n via API route (evita CORS)
-    try {
-      const webhookData = {
-        name,
-        phone,
-        email,
-        company,
-        cpfCnpj,
-        couponCode: appliedCoupon?.code || "",
-        finalPrice,
-        event: "acelerador-de-resultados",
-        description: "Acelerador de Resultados",
-        timestamp: new Date().toISOString(),
-      };
-      
-      const response = await fetch("/api/send-webhook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(webhookData),
-      });
-
-      if (!response.ok) {
-        console.error("[v0] Error sending webhook:", await response.text());
-      }
-    } catch (error) {
-      console.error("[v0] Error sending to webhook:", error);
-    }
-
-    // Se usou cupom, registrar o uso do cupom
-    if (appliedCoupon) {
-      try {
-        const registerResponse = await fetch("/api/register-coupon-use", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            code: appliedCoupon.code,
-            name,
-            phone,
-            email,
-            company,
-            cpfCnpj,
-            event: "acelerador-de-resultados",
-          }),
-        });
-
-        if (!registerResponse.ok) {
-          console.error("[v0] Error registering coupon use:", await registerResponse.text());
-        }
-      } catch (error) {
-        console.error("[v0] Error registering coupon use:", error);
-      }
-    } else {
-      // Sem cupom, registrar o checkout
-      try {
-        const registerResponse = await fetch("/api/register-checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            phone,
-            email,
-            company,
-            cpfCnpj,
-            event: "acelerador-de-resultados",
-            finalPrice,
-          }),
-        });
-
-        if (!registerResponse.ok) {
-          console.error("[v0] Error registering checkout:", await registerResponse.text());
-        }
-      } catch (error) {
-        console.error("[v0] Error registering checkout:", error);
-      }
-    }
-
     // Se o valor for 0, redireciona para página de agradecimento
     if (finalPrice === 0) {
+      // Enviar dados para o webhook do n8n via API route (evita CORS)
+      try {
+        const webhookData = {
+          name,
+          phone,
+          email,
+          company,
+          cpfCnpj,
+          couponCode: appliedCoupon?.code || "",
+          finalPrice,
+          description: paymentDescription,
+          event: "acelerador-de-resultados",
+          timestamp: new Date().toISOString(),
+        };
+        
+        const response = await fetch("/api/send-webhook", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(webhookData),
+        });
+
+        if (!response.ok) {
+          console.error("[v0] Error sending webhook:", await response.text());
+        }
+      } catch (error) {
+        console.error("[v0] Error sending to webhook:", error);
+      }
+
+      // Se usou cupom, registrar o uso do cupom
+      if (appliedCoupon) {
+        try {
+          const registerResponse = await fetch("/api/register-coupon-use", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              code: appliedCoupon.code,
+              name,
+              phone,
+              email,
+              company,
+              cpfCnpj,
+              event: "acelerador-de-resultados",
+            }),
+          });
+
+          if (!registerResponse.ok) {
+            console.error("[v0] Error registering coupon use:", await registerResponse.text());
+          }
+        } catch (error) {
+          console.error("[v0] Error registering coupon use:", error);
+        }
+      }
+      // NOTA: Cadastros sem cupom serao registrados apenas quando o pagamento for confirmado via webhook
+
       sessionStorage.setItem("registration_confirmed", "true");
       router.push("/obrigado");
       return;
     }
 
-    // Se houver valor, redireciona para pagamento
-    // Link diferente dependendo se usou cupom ou não
-    const paymentLink = appliedCoupon
-      ? "https://www.asaas.com/c/odfjkhnshezee7wc"  // Com cupom
-      : "https://www.asaas.com/c/ei638rxgto4bnuhb"; // Sem cupom
-    window.open(paymentLink, "_blank");
+    // Se houver valor, salvar checkout pendente e ir para checkout ASAAS
+    // Primeiro salvar no servidor para que o webhook possa registrar quando o pagamento for confirmado
+    try {
+      const pendingResponse = await fetch("/api/pending-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name,
+          phone,
+          company,
+          cpfCnpj,
+          event: "acelerador-de-resultados",
+          finalPrice,
+          description: paymentDescription,
+        }),
+      });
+
+      if (!pendingResponse.ok) {
+        console.error("[v0] Error saving pending checkout:", await pendingResponse.text());
+      }
+    } catch (error) {
+      console.error("[v0] Error saving pending checkout:", error);
+    }
+
+    // Armazenar dados no sessionStorage para o checkout ASAAS
+    sessionStorage.setItem("checkout_data", JSON.stringify({
+      name,
+      phone,
+      email,
+      company,
+      cpfCnpj,
+      couponCode: appliedCoupon?.code || "",
+      finalPrice,
+      description: paymentDescription,
+      event: "acelerador-de-resultados",
+      timestamp: new Date().toISOString(),
+    }));
+
+    setShowAsaasCheckout(true);
   };
+
+  // Se mostrar checkout ASAAS, renderizar apenas o formulário de pagamento
+  if (showAsaasCheckout) {
+    return (
+      <div className="min-h-screen bg-[#121242]">
+        <div className="flex flex-col items-center text-center pt-10">
+          <Image
+            src="/logo-clube-gestor.png"
+            alt="Clube Gestor"
+            width={280}
+            height={130}
+            className="h-12 md:h-20 w-auto"
+            priority
+          />
+        </div>
+
+        <div className="container mx-auto px-4 py-8 max-w-5xl">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-[#D4AF37] mb-2">
+              Pagamento Seguro
+            </h1>
+            <p className="text-white">
+              Finalize seu pagamento - Acelerador de Resultados
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg p-8">
+            <AsaasCheckout amount={finalPrice} description={paymentDescription} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#121242]">

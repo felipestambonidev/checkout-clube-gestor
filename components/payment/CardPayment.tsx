@@ -34,7 +34,7 @@ export default function CardPayment({
   holderInfo,
 }: CardPaymentProps) {
   const [cardData, setCardData] = useState({
-    holderName: '',
+    holderName: holderInfo?.name || '',
     number: '',
     expiry: '',
     ccv: '',
@@ -190,8 +190,9 @@ export default function CardPayment({
             setCardData(prev => ({ ...prev, holderName: e.target.value }));
             setError('');
           }}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={processing || isLoading}
+          className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${holderInfo?.name ? 'bg-gray-100' : ''}`}
+          disabled={processing || isLoading || !!holderInfo?.name}
+          readOnly={!!holderInfo?.name}
           placeholder="Como aparece no cartão"
         />
       </div>
