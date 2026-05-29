@@ -304,7 +304,7 @@ export default function AsaasCheckout({ amount, description = 'Checkout Clube Ge
 
       {/* Address Form */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-6">Endereço de Entrega</h2>
+        <h2 className="text-xl font-bold mb-6">Dados de pagamento</h2>
         <AddressForm 
           key={`address-form-${initialData.email || 'empty'}`}
           onSubmit={handleAddressSubmit} 
