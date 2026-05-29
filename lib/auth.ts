@@ -2,11 +2,27 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { isEmailAuthorized } from "@/lib/admin-emails";
 
+// Validação das variáveis de ambiente obrigatórias
+const googleClientId = process.env.AUTH_GOOGLE_ID;
+const googleClientSecret = process.env.AUTH_GOOGLE_SECRET;
+const authSecret = process.env.AUTH_SECRET;
+
+if (!googleClientId) {
+  console.error("[Auth] AUTH_GOOGLE_ID não está configurado!");
+}
+if (!googleClientSecret) {
+  console.error("[Auth] AUTH_GOOGLE_SECRET não está configurado!");
+}
+if (!authSecret) {
+  console.error("[Auth] AUTH_SECRET não está configurado!");
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  secret: authSecret,
   providers: [
     Google({
-      clientId: process.env.AUTH_GOOGLE_ID!,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      clientId: googleClientId || "",
+      clientSecret: googleClientSecret || "",
     }),
   ],
   pages: {
