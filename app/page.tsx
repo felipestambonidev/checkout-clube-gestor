@@ -203,37 +203,40 @@ export default function CheckoutPage() {
         } catch (error) {
           console.error("[v0] Error registering coupon use:", error);
         }
-      } else {
-        // Sem cupom, registrar o checkout
-        try {
-          const registerResponse = await fetch("/api/register-checkout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name,
-              phone,
-              email,
-              company,
-              cpfCnpj,
-              event: "workshop",
-              finalPrice,
-            }),
-          });
-
-          if (!registerResponse.ok) {
-            console.error("[v0] Error registering checkout:", await registerResponse.text());
-          }
-        } catch (error) {
-          console.error("[v0] Error registering checkout:", error);
-        }
       }
+      // NOTA: Cadastros sem cupom serao registrados apenas quando o pagamento for confirmado via webhook
 
       sessionStorage.setItem("registration_confirmed", "true");
       router.push("/obrigado");
       return;
     }
 
-    // Se houver valor, armazena dados e vai para checkout ASAAS
+    // Se houver valor, salvar checkout pendente e ir para checkout ASAAS
+    // Primeiro salvar no servidor para que o webhook possa registrar quando o pagamento for confirmado
+    try {
+      const pendingResponse = await fetch("/api/pending-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name,
+          phone,
+          company,
+          cpfCnpj,
+          event: "workshop",
+          finalPrice,
+          description: paymentDescription,
+        }),
+      });
+
+      if (!pendingResponse.ok) {
+        console.error("[v0] Error saving pending checkout:", await pendingResponse.text());
+      }
+    } catch (error) {
+      console.error("[v0] Error saving pending checkout:", error);
+    }
+
+    // Armazenar dados no sessionStorage para o checkout
     sessionStorage.setItem("checkout_data", JSON.stringify({
       name,
       phone,
