@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +24,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Users, Tag, Calendar, Rocket, Trash2, UserPlus, CreditCard } from "lucide-react";
+import { Plus, Users, Tag, Calendar, Rocket, Trash2, UserPlus, CreditCard, FileDown } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Coupon {
   code: string;
@@ -54,6 +57,7 @@ interface Checkout {
 }
 
 export default function AdminPage() {
+  const { data: session, status: sessionStatus } = useSession();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -61,7 +65,7 @@ export default function AdminPage() {
   const [loggingIn, setLoggingIn] = useState(false);
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<"workshop" | "acelerador" | "checkouts" | "checkout-custom">("workshop");
+  const [activeTab, setActiveTab] = useState<"workshop" | "acelerador" | "checkouts" | "checkout-custom-workshop" | "checkout-custom-acelerador">("workshop");
 
   // Workshop coupons
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -94,11 +98,17 @@ export default function AdminPage() {
   const [confirmRemoveDialogOpen, setConfirmRemoveDialogOpen] = useState(false);
   const [userToRemove, setUserToRemove] = useState<{ couponCode: string; userEmail: string; userName: string } | null>(null);
 
-  // Checkout config states
+  // Checkout config states - Workshop
   const [checkoutPrice, setCheckoutPrice] = useState("228.00");
   const [checkoutDescription, setCheckoutDescription] = useState("357603 Turma");
   const [configSaved, setConfigSaved] = useState(false);
   const [configSaving, setConfigSaving] = useState(false);
+
+  // Checkout config states - Acelerador
+  const [checkoutPriceAcelerador, setCheckoutPriceAcelerador] = useState("949.00");
+  const [checkoutDescriptionAcelerador, setCheckoutDescriptionAcelerador] = useState("Acelerador de Resultados");
+  const [configSavedAcelerador, setConfigSavedAcelerador] = useState(false);
+  const [configSavingAcelerador, setConfigSavingAcelerador] = useState(false);
 
   // Funcao para carregar config do servidor
   const loadCheckoutConfig = async () => {
@@ -114,7 +124,33 @@ export default function AdminPage() {
     }
   };
 
+  // Funcao para carregar config do servidor - Acelerador
+  const loadCheckoutConfigAcelerador = async () => {
+    try {
+      const response = await fetch("/api/checkout-config-acelerador");
+      const data = await response.json();
+      if (data.success && data.config) {
+        setCheckoutPriceAcelerador(data.config.price.toString());
+        setCheckoutDescriptionAcelerador(data.config.description);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar config acelerador:", error);
+    }
+  };
+
   useEffect(() => {
+    // Verifica autenticação via sessão do Google (next-auth)
+    if (sessionStatus === "authenticated" && session) {
+      setIsAuthenticated(true);
+      loadCoupons();
+      loadAceleradorCoupons();
+      loadCheckouts();
+      loadCheckoutConfig();
+      loadCheckoutConfigAcelerador();
+      return;
+    }
+    
+    // Verifica autenticação tradicional (usuário/senha)
     const authStatus = sessionStorage.getItem("admin_authenticated");
     if (authStatus === "true") {
       setIsAuthenticated(true);
@@ -122,12 +158,13 @@ export default function AdminPage() {
       loadAceleradorCoupons();
       loadCheckouts();
       loadCheckoutConfig();
-    } else {
+      loadCheckoutConfigAcelerador();
+    } else if (sessionStatus !== "loading") {
       setLoading(false);
       setLoadingAcelerador(false);
       setLoadingCheckouts(false);
     }
-  }, []);
+  }, [sessionStatus, session]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,6 +186,7 @@ export default function AdminPage() {
         loadAceleradorCoupons();
         loadCheckouts();
         loadCheckoutConfig();
+        loadCheckoutConfigAcelerador();
       } else {
         const data = await response.json();
         setAuthError(data.error || "Usuario ou senha incorretos");
@@ -322,6 +360,134 @@ export default function AdminPage() {
     });
   };
 
+  // Funcao para gerar PDF de convidados do Workshop
+  const generateWorkshopPDF = () => {
+    const doc = new jsPDF();
+    const allUsers: Array<{ name: string; phone: string; email: string; company: string; cpfCnpj: string; usedAt: string; couponCode: string }> = [];
+
+    // Coletar todos os usuários de todos os cupons
+    coupons.forEach((coupon) => {
+      coupon.usedBy.forEach((user) => {
+        allUsers.push({
+          ...user,
+          couponCode: coupon.code,
+        });
+      });
+    });
+
+    // Header
+    doc.setFontSize(18);
+    doc.setTextColor(18, 18, 66);
+    doc.text("Lista de Convidados - Workshop Gestao do Tempo", 14, 22);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}`, 14, 30);
+    doc.text(`Total de convidados: ${allUsers.length}`, 14, 36);
+
+    // Tabela
+    autoTable(doc, {
+      startY: 42,
+      head: [["Nome", "Telefone", "Email", "Empresa", "CPF/CNPJ", "Cupom", "Usado em"]],
+      body: allUsers.map((user) => [
+        user.name,
+        user.phone,
+        user.email,
+        user.company || "-",
+        user.cpfCnpj,
+        user.couponCode,
+        formatDate(user.usedAt),
+      ]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [192, 153, 46], textColor: [18, 18, 66] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    doc.save("convidados-workshop.pdf");
+  };
+
+  // Funcao para gerar PDF de convidados do Acelerador
+  const generateAceleradorPDF = () => {
+    const doc = new jsPDF();
+    const allUsers: Array<{ name: string; phone: string; email: string; company: string; cpfCnpj: string; usedAt: string; couponCode: string }> = [];
+
+    // Coletar todos os usuários de todos os cupons
+    aceleradorCoupons.forEach((coupon) => {
+      coupon.usedBy.forEach((user) => {
+        allUsers.push({
+          ...user,
+          couponCode: coupon.code,
+        });
+      });
+    });
+
+    // Header
+    doc.setFontSize(18);
+    doc.setTextColor(18, 18, 66);
+    doc.text("Lista de Convidados - Acelerador de Resultados", 14, 22);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}`, 14, 30);
+    doc.text(`Total de convidados: ${allUsers.length}`, 14, 36);
+
+    // Tabela
+    autoTable(doc, {
+      startY: 42,
+      head: [["Nome", "Telefone", "Email", "Empresa", "CPF/CNPJ", "Cupom", "Usado em"]],
+      body: allUsers.map((user) => [
+        user.name,
+        user.phone,
+        user.email,
+        user.company || "-",
+        user.cpfCnpj,
+        user.couponCode,
+        formatDate(user.usedAt),
+      ]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [192, 153, 46], textColor: [18, 18, 66] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    doc.save("convidados-acelerador.pdf");
+  };
+
+  // Funcao para gerar PDF de cadastros sem cupom
+  const generateCheckoutsPDF = () => {
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFontSize(18);
+    doc.setTextColor(18, 18, 66);
+    doc.text("Lista de Cadastros sem Cupom", 14, 22);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}`, 14, 30);
+    doc.text(`Total de cadastros: ${checkouts.length}`, 14, 36);
+
+    // Tabela
+    autoTable(doc, {
+      startY: 42,
+      head: [["Nome", "Telefone", "Email", "Empresa", "CPF/CNPJ", "Evento", "Valor", "Data"]],
+      body: checkouts.map((checkout) => [
+        checkout.name,
+        checkout.phone,
+        checkout.email,
+        checkout.company || "-",
+        checkout.cpfCnpj,
+        checkout.event === "workshop" ? "Workshop" : "Acelerador",
+        `R$ ${checkout.finalPrice?.toFixed(2) || "0.00"}`,
+        formatDate(checkout.createdAt),
+      ]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [192, 153, 46], textColor: [18, 18, 66] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    doc.save("cadastros-sem-cupom.pdf");
+  };
+
   const openRemoveConfirmation = (couponCode: string, userEmail: string, userName: string) => {
     setUserToRemove({ couponCode, userEmail, userName });
     setConfirmRemoveDialogOpen(true);
@@ -432,6 +598,42 @@ export default function AdminPage() {
                   {loggingIn ? "Entrando..." : "Entrar"}
                 </Button>
               </form>
+              
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-slate-300" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-slate-500">ou</span>
+                </div>
+              </div>
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => signIn("google", { callbackUrl: "/admin" })}
+                className="w-full border-slate-300 hover:bg-slate-50 cursor-pointer"
+              >
+                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
+                </svg>
+                Entrar com Google
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -498,20 +700,43 @@ export default function AdminPage() {
             Cadastros sem Cupom
           </Button>
           <Button
-            onClick={() => setActiveTab("checkout-custom")}
+            onClick={() => setActiveTab("checkout-custom-workshop")}
             className={`px-6 py-3 font-medium cursor-pointer ${
-              activeTab === "checkout-custom"
+              activeTab === "checkout-custom-workshop"
                 ? "bg-[#C0992E] text-[#121242]"
                 : "bg-white/10 text-white hover:bg-white/20"
             }`}
           >
             <CreditCard className="w-4 h-4 mr-2" />
-            Checkout Personalizado
+            Checkout Personalizado - Workshop
+          </Button>
+          <Button
+            onClick={() => setActiveTab("checkout-custom-acelerador")}
+            className={`px-6 py-3 font-medium cursor-pointer ${
+              activeTab === "checkout-custom-acelerador"
+                ? "bg-[#C0992E] text-[#121242]"
+                : "bg-white/10 text-white hover:bg-white/20"
+            }`}
+          >
+            <CreditCard className="w-4 h-4 mr-2" />
+            Checkout Personalizado - Acelerador
           </Button>
         </div>
 
         {activeTab === "workshop" && (
           <>
+            {/* Botao Exportar PDF - Workshop */}
+            <div className="flex justify-end mb-4">
+              <Button
+                onClick={generateWorkshopPDF}
+                className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] cursor-pointer"
+                disabled={coupons.reduce((acc, c) => acc + c.usedCount, 0) === 0}
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar Lista de Convidados (PDF)
+              </Button>
+            </div>
+
             {/* Stats Cards */}
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <Card className="border-slate-200">
@@ -630,6 +855,18 @@ export default function AdminPage() {
 
         {activeTab === "acelerador" && (
           <>
+            {/* Botao Exportar PDF - Acelerador */}
+            <div className="flex justify-end mb-4">
+              <Button
+                onClick={generateAceleradorPDF}
+                className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] cursor-pointer"
+                disabled={aceleradorCoupons.reduce((acc, c) => acc + c.usedCount, 0) === 0}
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar Lista de Convidados (PDF)
+              </Button>
+            </div>
+
             {/* Stats Cards - Acelerador */}
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <Card className="border-slate-200">
@@ -1011,6 +1248,18 @@ export default function AdminPage() {
         {/* Checkouts sem Cupom Tab */}
         {activeTab === "checkouts" && (
           <>
+            {/* Botao Exportar PDF - Checkouts */}
+            <div className="flex justify-end mb-4">
+              <Button
+                onClick={generateCheckoutsPDF}
+                className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] cursor-pointer"
+                disabled={checkouts.length === 0}
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar Lista de Cadastros (PDF)
+              </Button>
+            </div>
+
             {/* Stats Cards - Checkouts */}
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <Card className="border-slate-200">
@@ -1128,14 +1377,14 @@ export default function AdminPage() {
           </>
         )}
 
-        {/* Checkout Personalizado Tab */}
-        {activeTab === "checkout-custom" && (
+        {/* Checkout Personalizado - Workshop Tab */}
+        {activeTab === "checkout-custom-workshop" && (
           <>
             <Card className="border-slate-200 mb-8">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
-                  Configurar Checkout de Pagamentos
+                  Configurar Checkout de Pagamentos - Workshop
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1146,7 +1395,7 @@ export default function AdminPage() {
                   <ul className="text-sm text-blue-600 list-disc list-inside space-y-1">
                     <li>Configure o valor e a descricao do pagamento abaixo</li>
                     <li>A descricao deve seguir o formato: <code className="bg-blue-100 px-1 rounded">ID Turma</code> ou <code className="bg-blue-100 px-1 rounded">ID Assinatura</code></li>
-                    <li>Clique em Salvar para aplicar as configuracoes no checkout principal</li>
+                    <li>Clique em Salvar para aplicar as configuracoes no checkout do Workshop</li>
                     <li>A descricao sera enviada ao ASAAS e recebida pelo n8n para integracao com o Memberkit</li>
                   </ul>
                 </div>
@@ -1208,7 +1457,7 @@ export default function AdminPage() {
                           headers: {
                             "Content-Type": "application/json",
                           },
-                          credentials: "include", // Usa cookies HTTP-only para autenticacao
+                          credentials: "include",
                           body: JSON.stringify({
                             price: parseFloat(checkoutPrice),
                             description: checkoutDescription,
@@ -1241,29 +1490,145 @@ export default function AdminPage() {
                 </div>
 
                 <div className="pt-4 border-t border-slate-200">
-                  <h4 className="font-medium text-slate-900 mb-2">Exemplos de descricao:</h4>
-                  <div className="grid md:grid-cols-2 gap-3">
-                    <div className="p-3 bg-slate-50 rounded-lg">
-                      <code className="text-sm font-mono text-[#C0992E]">357603 Turma</code>
-                      <p className="text-xs text-slate-500 mt-1">Para turmas/cursos</p>
-                    </div>
-                    <div className="p-3 bg-slate-50 rounded-lg">
-                      <code className="text-sm font-mono text-[#C0992E]">123456 Assinatura</code>
-                      <p className="text-xs text-slate-500 mt-1">Para assinaturas recorrentes</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-200">
                   <p className="text-sm text-slate-600">
-                    <strong>Link do Checkout:</strong>{" "}
+                    <strong>Link do Checkout Workshop:</strong>{" "}
                     <a 
                       href="/" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-[#C0992E] hover:underline"
                     >
-                      Abrir Checkout Principal
+                      Abrir Checkout Workshop
+                    </a>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {/* Checkout Personalizado - Acelerador Tab */}
+        {activeTab === "checkout-custom-acelerador" && (
+          <>
+            <Card className="border-slate-200 mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Configurar Checkout de Pagamentos - Acelerador
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700 mb-2">
+                    <strong>Como funciona:</strong>
+                  </p>
+                  <ul className="text-sm text-blue-600 list-disc list-inside space-y-1">
+                    <li>Configure o valor e a descricao do pagamento abaixo</li>
+                    <li>A descricao deve seguir o formato: <code className="bg-blue-100 px-1 rounded">ID Turma</code> ou <code className="bg-blue-100 px-1 rounded">ID Assinatura</code></li>
+                    <li>Clique em Salvar para aplicar as configuracoes no checkout do Acelerador</li>
+                    <li>A descricao sera enviada ao ASAAS e recebida pelo n8n para integracao com o Memberkit</li>
+                  </ul>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Valor do Pagamento (R$)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={checkoutPriceAcelerador}
+                      onChange={(e) => {
+                        setCheckoutPriceAcelerador(e.target.value);
+                        setConfigSavedAcelerador(false);
+                      }}
+                      className="bg-white border-slate-300"
+                      placeholder="949.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Descricao do Pagamento (para Memberkit/n8n)
+                    </label>
+                    <Input
+                      type="text"
+                      value={checkoutDescriptionAcelerador}
+                      onChange={(e) => {
+                        setCheckoutDescriptionAcelerador(e.target.value);
+                        setConfigSavedAcelerador(false);
+                      }}
+                      className="bg-white border-slate-300"
+                      placeholder="Acelerador de Resultados"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Formato: ID + Tipo (ex: 357603 Turma ou 123456 Assinatura)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                  <p className="text-sm text-slate-700">
+                    <strong>Configuracao atual:</strong>
+                  </p>
+                  <p className="text-lg font-semibold text-[#C0992E] mt-1">
+                    R$ {parseFloat(checkoutPriceAcelerador || "0").toFixed(2)} - {checkoutDescriptionAcelerador || "Sem descricao"}
+                  </p>
+                </div>
+
+                <div className="flex gap-4 items-center">
+                  <Button
+                    onClick={async () => {
+                      setConfigSavingAcelerador(true);
+                      try {
+                        const response = await fetch("/api/checkout-config-acelerador", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          credentials: "include",
+                          body: JSON.stringify({
+                            price: parseFloat(checkoutPriceAcelerador),
+                            description: checkoutDescriptionAcelerador,
+                          }),
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                          setConfigSavedAcelerador(true);
+                          setTimeout(() => setConfigSavedAcelerador(false), 3000);
+                        } else {
+                          alert("Erro ao salvar: " + (data.error || "Erro desconhecido"));
+                        }
+                      } catch (error) {
+                        console.error("Erro ao salvar config:", error);
+                        alert("Erro ao salvar configuracoes");
+                      } finally {
+                        setConfigSavingAcelerador(false);
+                      }
+                    }}
+                    disabled={configSavingAcelerador}
+                    className="bg-[#C0992E] hover:bg-[#C0992E]/80 text-[#121242] font-medium px-8 cursor-pointer disabled:opacity-50"
+                  >
+                    {configSavingAcelerador ? "Salvando..." : "Salvar Configuracoes"}
+                  </Button>
+                  {configSavedAcelerador && (
+                    <span className="text-green-600 font-medium flex items-center">
+                      Configuracoes salvas com sucesso!
+                    </span>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-slate-200">
+                  <p className="text-sm text-slate-600">
+                    <strong>Link do Checkout Acelerador:</strong>{" "}
+                    <a 
+                      href="/acelerador-de-resultados" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[#C0992E] hover:underline"
+                    >
+                      Abrir Checkout Acelerador
                     </a>
                   </p>
                 </div>

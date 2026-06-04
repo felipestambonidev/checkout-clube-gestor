@@ -24,6 +24,9 @@ interface AddressFormProps {
 }
 
 export default function AddressForm({ onSubmit, isLoading = false, initialData }: AddressFormProps) {
+  // Verificar quais campos vêm pre-preenchidos para torná-los readonly
+  const hasPrefilledData = !!(initialData?.name || initialData?.email || initialData?.cpf || initialData?.phone);
+  
   const [formData, setFormData] = useState<AddressData>({
     name: initialData?.name || '',
     email: initialData?.email || '',
@@ -101,6 +104,13 @@ export default function AddressForm({ onSubmit, isLoading = false, initialData }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {hasPrefilledData && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <p className="text-sm text-blue-700">
+            Seus dados pessoais foram preenchidos automaticamente. Por favor, complete apenas os dados de endereço abaixo.
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Nome */}
         <div>
@@ -113,8 +123,9 @@ export default function AddressForm({ onSubmit, isLoading = false, initialData }
             type="text"
             value={formData.name}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasPrefilledData && initialData?.name ? 'bg-gray-100' : ''}`}
+            disabled={isLoading || (hasPrefilledData && !!initialData?.name)}
+            readOnly={hasPrefilledData && !!initialData?.name}
           />
           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
         </div>
@@ -130,8 +141,9 @@ export default function AddressForm({ onSubmit, isLoading = false, initialData }
             type="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasPrefilledData && initialData?.email ? 'bg-gray-100' : ''}`}
+            disabled={isLoading || (hasPrefilledData && !!initialData?.email)}
+            readOnly={hasPrefilledData && !!initialData?.email}
           />
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
         </div>
@@ -148,8 +160,9 @@ export default function AddressForm({ onSubmit, isLoading = false, initialData }
             placeholder="11999999999"
             value={formData.cpf}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasPrefilledData && initialData?.cpf ? 'bg-gray-100' : ''}`}
+            disabled={isLoading || (hasPrefilledData && !!initialData?.cpf)}
+            readOnly={hasPrefilledData && !!initialData?.cpf}
           />
           {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf}</p>}
         </div>
@@ -166,8 +179,9 @@ export default function AddressForm({ onSubmit, isLoading = false, initialData }
             placeholder="(11) 99999-9999"
             value={formData.phone}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasPrefilledData && initialData?.phone ? 'bg-gray-100' : ''}`}
+            disabled={isLoading || (hasPrefilledData && !!initialData?.phone)}
+            readOnly={hasPrefilledData && !!initialData?.phone}
           />
           {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
         </div>
@@ -300,7 +314,7 @@ export default function AddressForm({ onSubmit, isLoading = false, initialData }
         disabled={isLoading || cepLoading}
         className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
-        {isLoading ? 'Processando...' : 'Confirmar Endereço'}
+        {isLoading ? 'Processando...' : 'Confirmar Dados'}
       </button>
     </form>
   );

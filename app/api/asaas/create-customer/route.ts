@@ -28,11 +28,19 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = process.env.ASAAS_API_KEY;
-    // URL fixa do sandbox - pode ser alterada para produção via env var
-    const apiUrl = process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3';
+    const apiUrl = process.env.ASAAS_API_URL;
 
-    console.log('[ASAAS] API URL:', apiUrl);
-    console.log('[ASAAS] API Key presente:', !!apiKey);
+    // Verificar se ASAAS_API_URL está configurada
+    if (!apiUrl) {
+      console.error('[ASAAS CUSTOMER] ASAAS_API_URL não configurada');
+      return NextResponse.json(
+        { error: 'ASAAS_API_URL não configurada. Configure a URL da API (sandbox ou produção).' },
+        { status: 500 }
+      );
+    }
+
+    console.log('[ASAAS CUSTOMER] API URL:', apiUrl);
+    console.log('[ASAAS CUSTOMER] API Key presente:', !!apiKey);
 
     if (!apiKey) {
       console.error('[ASAAS] ASAAS_API_KEY não está configurada');

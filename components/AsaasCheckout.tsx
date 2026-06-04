@@ -29,6 +29,7 @@ export default function AsaasCheckout({ amount, description = 'Checkout Clube Ge
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [customerId, setCustomerId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState('');
   const [paymentId, setPaymentId] = useState('');
   const [initialData, setInitialData] = useState<Partial<AddressData>>({});
@@ -61,6 +62,8 @@ export default function AsaasCheckout({ amount, description = 'Checkout Clube Ge
       }
     } catch (err) {
       console.error('[AsaasCheckout] Erro ao carregar dados:', err);
+    } finally {
+      setDataLoaded(true);
     }
   }, []);
 
@@ -133,6 +136,33 @@ export default function AsaasCheckout({ amount, description = 'Checkout Clube Ge
           <p className="text-green-600">
             Obrigado por sua compra. Você será redirecionado em breve...
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Aguardar carregamento dos dados antes de renderizar
+  if (!dataLoaded) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div>
+            <p className="text-sm text-gray-600">Valor a pagar</p>
+            <p className="text-3xl font-bold text-gray-900">
+              R$ {amount.toFixed(2)}
+            </p>
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-10 bg-gray-200 rounded"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -274,8 +304,13 @@ export default function AsaasCheckout({ amount, description = 'Checkout Clube Ge
 
       {/* Address Form */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-6">Endereço de Entrega</h2>
-        <AddressForm onSubmit={handleAddressSubmit} isLoading={loading} initialData={initialData} />
+        <h2 className="text-xl font-bold mb-6">Dados de pagamento</h2>
+        <AddressForm 
+          key={`address-form-${initialData.email || 'empty'}`}
+          onSubmit={handleAddressSubmit} 
+          isLoading={loading} 
+          initialData={initialData} 
+        />
       </div>
 
       {/* Security Info */}

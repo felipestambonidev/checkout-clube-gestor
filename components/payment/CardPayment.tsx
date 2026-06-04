@@ -34,7 +34,7 @@ export default function CardPayment({
   holderInfo,
 }: CardPaymentProps) {
   const [cardData, setCardData] = useState({
-    holderName: '',
+    holderName: holderInfo?.name || '',
     number: '',
     expiry: '',
     ccv: '',
