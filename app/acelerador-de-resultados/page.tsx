@@ -17,6 +17,10 @@ export default function AceleradorDeResultadosPage() {
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
+  const [cargo, setCargo] = useState("");
+  const [colaboradores, setColaboradores] = useState("");
+  const [faturamento, setFaturamento] = useState("");
+
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
@@ -109,6 +113,10 @@ export default function AceleradorDeResultadosPage() {
           : ""
       : "",
     company: touched.company && !company.trim() ? "Empresa é obrigatória" : "",
+    cpfCnpj: touched.cpfCnpj && !cpfCnpj.trim() ? "CPF/CNPJ é obrigatório" : "",
+    cargo: touched.cargo && !cargo ? "Cargo é obrigatório" : "",
+    colaboradores: touched.colaboradores && !colaboradores ? "Quantidade de colaboradores é obrigatória" : "",
+    faturamento: touched.faturamento && !faturamento ? "Faturamento é obrigatório" : "",
   };
 
   const handleApplyCoupon = async () => {
@@ -161,6 +169,9 @@ export default function AceleradorDeResultadosPage() {
           email,
           company,
           cpfCnpj,
+          cargo, // Enviando novo dado
+          colaboradores, // Enviando novo dado
+          faturamento, // Enviando novo dado
           couponCode: appliedCoupon?.code || "",
           finalPrice,
           description: paymentDescription,
@@ -194,6 +205,9 @@ export default function AceleradorDeResultadosPage() {
               email,
               company,
               cpfCnpj,
+              cargo, // Enviando novo dado
+              colaboradores, // Enviando novo dado
+              faturamento, // Enviando novo dado
               event: "acelerador-de-resultados",
             }),
           });
@@ -213,7 +227,6 @@ export default function AceleradorDeResultadosPage() {
     }
 
     // Se houver valor, salvar checkout pendente e ir para checkout ASAAS
-    // Primeiro salvar no servidor para que o webhook possa registrar quando o pagamento for confirmado
     try {
       const pendingResponse = await fetch("/api/pending-checkout", {
         method: "POST",
@@ -224,6 +237,9 @@ export default function AceleradorDeResultadosPage() {
           phone,
           company,
           cpfCnpj,
+          cargo, // Enviando novo dado
+          colaboradores, // Enviando novo dado
+          faturamento, // Enviando novo dado
           event: "acelerador-de-resultados",
           finalPrice,
           description: paymentDescription,
@@ -244,6 +260,9 @@ export default function AceleradorDeResultadosPage() {
       email,
       company,
       cpfCnpj,
+      cargo, // Enviando novo dado
+      colaboradores, // Enviando novo dado
+      faturamento, // Enviando novo dado
       couponCode: appliedCoupon?.code || "",
       finalPrice,
       description: paymentDescription,
@@ -416,17 +435,94 @@ export default function AceleradorDeResultadosPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="cpfCnpj" className="block text-sm font-medium text-slate-700 mb-2">CPF ou CNPJ</label>
+                    <label htmlFor="cpfCnpj" className="block text-sm font-medium text-slate-700 mb-2">
+                      CPF ou CNPJ <span className="text-red-500">*</span>
+                    </label>
                     <Input
                       id="cpfCnpj"
                       type="text"
                       placeholder="000.000.000-00 ou 00.000.000/0000-00"
                       value={cpfCnpj}
                       onChange={(e) => setCpfCnpj(maskCpfCnpj(e.target.value))}
+                      onBlur={() => handleBlur("cpfCnpj")}
                       maxLength={18}
-                      className="w-full"
+                      className={`w-full ${fieldErrors.cpfCnpj ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
+                    {fieldErrors.cpfCnpj && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.cpfCnpj}</p>
+                    )}
                   </div>
+
+                  {/* CARGO */}
+                  <div>
+                    <label htmlFor="cargo" className="block text-sm font-medium text-slate-700 mb-2">
+                      Cargo <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      id="cargo"
+                      value={cargo}
+                      onChange={(e) => setCargo(e.target.value)}
+                      onBlur={() => handleBlur("cargo")}
+                      className={`flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 ${fieldErrors.cargo ? "border-red-400 focus:ring-red-400" : ""} ${!cargo ? "text-slate-500" : "text-slate-900"}`}
+                    >
+                      <option value="" disabled hidden>Selecione seu cargo</option>
+                      <option value="CEO">CEO</option>
+                      <option value="Diretor">Diretor</option>
+                      <option value="Gestor">Gestor</option>
+                      <option value="Colaborador">Colaborador</option>
+                    </select>
+                    {fieldErrors.cargo && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.cargo}</p>
+                    )}
+                  </div>
+
+                  {/* QUANTIDADE DE COLABORADORES */}
+                  <div>
+                    <label htmlFor="colaboradores" className="block text-sm font-medium text-slate-700 mb-2">
+                      Quantidade de Colaboradores <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      id="colaboradores"
+                      value={colaboradores}
+                      onChange={(e) => setColaboradores(e.target.value)}
+                      onBlur={() => handleBlur("colaboradores")}
+                      className={`flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 ${fieldErrors.colaboradores ? "border-red-400 focus:ring-red-400" : ""} ${!colaboradores ? "text-slate-500" : "text-slate-900"}`}
+                    >
+                      <option value="" disabled hidden>Selecione a quantidade</option>
+                      <option value="1 a 20">1 a 20</option>
+                      <option value="20 a 50">20 a 50</option>
+                      <option value="50 a 100">50 a 100</option>
+                      <option value="100 a 200">100 a 200</option>
+                      <option value="200 +">200 +</option>
+                    </select>
+                    {fieldErrors.colaboradores && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.colaboradores}</p>
+                    )}
+                  </div>
+
+                  {/* FATURAMENTO MÊS */}
+                  <div>
+                    <label htmlFor="faturamento" className="block text-sm font-medium text-slate-700 mb-2">
+                      Faturamento Mensal <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      id="faturamento"
+                      value={faturamento}
+                      onChange={(e) => setFaturamento(e.target.value)}
+                      onBlur={() => handleBlur("faturamento")}
+                      className={`flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 ${fieldErrors.faturamento ? "border-red-400 focus:ring-red-400" : ""} ${!faturamento ? "text-slate-500" : "text-slate-900"}`}
+                    >
+                      <option value="" disabled hidden>Selecione o faturamento</option>
+                      <option value="50.000 a 100.000">50.000 a 100.000</option>
+                      <option value="100.000 a 500.000">100.000 a 500.000</option>
+                      <option value="500.000 a 1.000.000.00">500.000 a 1.000.000</option>
+                      <option value="1.000.000.00 +">1.000.000 +</option>
+                    </select>
+                    {fieldErrors.faturamento && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.faturamento}</p>
+                    )}
+                  </div>
+
                 </div>
               </CardContent>
             </Card>
@@ -523,7 +619,7 @@ export default function AceleradorDeResultadosPage() {
 
                 <Button
                   onClick={handleProceedToPayment}
-                  disabled={!name.trim() || !phone.trim() || !email.trim() || !isValidEmail(email) || !company.trim() || !cpfCnpj}
+                  disabled={!name.trim() || !phone.trim() || !email.trim() || !isValidEmail(email) || !company.trim() || !cpfCnpj || !cargo || !colaboradores || !faturamento}
                   className="w-full bg-[#D4AF37] hover:bg-[#121242]/70 text-[#121242] hover:text-white font-medium py-6 cursor-pointer"
                 >
                   {finalPrice === 0 ? "Confirmar Inscrição" : "Ir para Pagamento"}
