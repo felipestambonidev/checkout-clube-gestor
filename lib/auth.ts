@@ -19,10 +19,18 @@ if (!authSecret) {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: authSecret,
+  // AUTH_URL deve ser a URL pública do site em produção (ex: https://checkout.clubegestor.com)
+  // Em desenvolvimento é detectada automaticamente
+  ...(process.env.AUTH_URL ? { basePath: "/api/auth" } : {}),
   providers: [
     Google({
-      clientId: googleClientId || "",
-      clientSecret: googleClientSecret || "",
+      clientId: googleClientId!,
+      clientSecret: googleClientSecret!,
+      authorization: {
+        params: {
+          prompt: "select_account",
+        },
+      },
     }),
   ],
   pages: {
@@ -33,18 +41,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async signIn({ user }) {
       // Verifica se o email está autorizado no DynamoDB
       if (!user.email) {
+        console.warn("[Auth] Tentativa de login sem email");
         return false;
       }
-      
-      const authorized = await isEmailAuthorized(user.email);
-      
-      if (!authorized) {
-        console.warn(`[Auth] Email não autorizado tentou login: ${user.email}`);
-        return false;
+
+      try {
+        const authorized = await isEmailAuthorized(user.email);
+
+        if (!authorized) {
+          console.warn(`[Auth] Email não autorizado tentou login: ${user.email}`);
+          return "/admin?error=AccessDenied";
+        }
+
+        console.log(`[Auth] Login Google autorizado: ${user.email}`);
+        return true;
+      } catch (err) {
+        console.error("[Auth] Erro ao verificar autorização no DynamoDB:", err);
+        // Falha segura: nega o acesso se o DynamoDB estiver indisponível
+        return "/admin?error=DatabaseError";
       }
-      
-      console.log(`[Auth] Login Google autorizado: ${user.email}`);
-      return true;
     },
     async jwt({ token, user }) {
       if (user) {
@@ -65,7 +80,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   session: {
     strategy: "jwt",
-    maxAge: 4 * 60 * 60, // 4 horas (mesmo tempo do login tradicional)
+    maxAge: 4 * 60 * 60, // 4 horas
   },
   trustHost: true,
 });
